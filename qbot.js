@@ -46,6 +46,7 @@ function QBotAI(settings) {
 		house : new Queue(),
 		villager : new Queue(),
 		economicBuilding : new Queue(),
+		field : new Queue(),
 		militaryBuilding : new Queue(),
 		militaryUnit : new Queue()
 	};
@@ -53,9 +54,10 @@ function QBotAI(settings) {
 	this.productionQueues = [];
 	
 	var priorities = {
-		house : 1000,
+		house : 100,
 		villager : 100,
 		economicBuilding : 30,
+		field: 4,
 		militaryBuilding : 30,
 		militaryUnit : 20
 	};

@@ -79,6 +79,11 @@ QueueManager.prototype.update = function(gameState) {
 			}
 		}
 
+		// Checks to see that there is an item in at least one queue, otherwise breaks the loop.
+		if (curItemQueue === undefined && ratioMinQueue === undefined){
+			break;
+		}
+		
 		if (curItemQueue === undefined) {
 			for (p in this.queues) {
 				this.account[p] += ratioMin * this.priorities[p];
@@ -100,7 +105,7 @@ QueueManager.prototype.update = function(gameState) {
 	this.curItemQueue = curItemQueue;
 	
 	// Handle output queues
-	// TODO: Handle multiple units in queue for faster training times
+	// TODO: Handle multiple units in queue for faster training times - partially done, need to hold queue before sending to a building
 	for (p in this.queues) {
 		while (this.queues[p].outQueueLength() > 0){
 			var next = this.queues[p].outQueueNext();

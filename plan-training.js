@@ -11,6 +11,8 @@ var UnitTrainingPlan = function(gameState, type, metadata, number) {
 	this.cost = new Resources(template.cost(), template._template.Cost.Population);
 	if (!number){
 		this.number = 1;
+	}else{
+		this.number = number;
 	}
 };
 

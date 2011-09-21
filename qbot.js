@@ -79,6 +79,7 @@ QBotAI.prototype.OnUpdate = function() {
 
 		this.modules[2].update(gameState, this.queues);
 		this.modules[0].update(gameState, this.queues);
+		this.modules[1].update(gameState, this.queues);
 
 		// warn("housesQueued: " + this.queues.house.length())
 		// warn(uneval(gameState.getTemplate(gameState.applyCiv("units/{civ}_support_female_citizen")).cost()))

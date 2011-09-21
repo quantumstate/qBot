@@ -72,6 +72,7 @@ QBotAI.prototype.OnUpdate = function() {
 	// Run the update every n turns, offset depending on player ID to balance
 	// the load
 	if ((this.turn + this.player) % 10 == 0) {
+		Engine.ProfileStart("qBot");
 		var gameState = new GameState(this);
 
 		// this.msg(gameState.countEntitiesWithType(gameState.applyCiv("foundation|structures/{civ}_house")));
@@ -114,6 +115,7 @@ QBotAI.prototype.OnUpdate = function() {
 		 *  // Reset the temporary plan data for each (var planGroup in
 		 * this.planGroups) planGroup.resetPlans();
 		 */
+		Engine.ProfileStop();
 	}
 
 	this.turn++;

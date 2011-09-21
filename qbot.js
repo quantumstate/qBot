@@ -41,6 +41,7 @@ function QBotAI(settings) {
 
 	this.modules = [ new EconomyManager(), new MilitaryAttackManager(), new HousingManager() ];
 
+	// this.queues cannot be modified past initialisation or queue-manager will break
 	// Cannot be modified past initialisation or queue-manager will break
 	this.queues = {
 		house : new Queue(),

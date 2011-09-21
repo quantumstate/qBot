@@ -111,8 +111,12 @@ QueueManager.prototype.update = function(gameState) {
 			var next = this.queues[p].outQueueNext();
 			if (next.category === "building"){
 				if (gameState.buildingsBuilt == 0){
-					this.queues[p].executeNext(gameState);
-					gameState.buildingsBuilt += 1;
+					if (this.queues[p].outQueueNext().canExecute(gameState)){	
+						this.queues[p].executeNext(gameState);
+						gameState.buildingsBuilt += 1;
+					}else{
+						break;
+					}
 				}else{
 					break;
 				}

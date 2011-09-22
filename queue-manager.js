@@ -71,7 +71,6 @@ QueueManager.prototype.affordableToOutQueue = function(gameState) {
 	// Check everything in the curItemQueue, if it is affordable then mark it
 	// for execution
 	for ( var i = 0; i < this.curItemQueue.length; i++) {
-		warn(this.curItemQueue[i]);
 		if (resources.canAfford(this.queues[this.curItemQueue[i]].getNext().getCost())) {
 			this.queues[this.curItemQueue[i]].nextToOutQueue();
 			resources = this.getAvailableResources(gameState);
@@ -173,7 +172,6 @@ QueueManager.prototype.update = function(gameState) {
 			}
 			
 		}
-		//break;
 
 		this.affordableToOutQueue(gameState);
 	} while (this.curItemQueue.length === 0)

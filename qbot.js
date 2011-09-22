@@ -74,49 +74,16 @@ QBotAI.prototype.OnUpdate = function() {
 	if ((this.turn + this.player) % 10 == 0) {
 		Engine.ProfileStart("qBot");
 		var gameState = new GameState(this);
-
-		// this.msg(gameState.countEntitiesWithType(gameState.applyCiv("foundation|structures/{civ}_house")));
-		// warn("villagersQueued: " + this.queues.villager.length())
-
-		this.modules[2].update(gameState, this.queues);
-		this.modules[0].update(gameState, this.queues);
-		this.modules[1].update(gameState, this.queues);
-
-		// warn("housesQueued: " + this.queues.house.length())
-		// warn(uneval(gameState.getTemplate(gameState.applyCiv("units/{civ}_support_female_citizen")).cost()))
-		//this.queues.house.executeNext(gameState);
+		
+		for (var i = 0; i < this.modules.length; i++){
+			this.modules[i].update(gameState, this.queues);
+		}
 		
 		this.queueManager.update(gameState);
-		/*
-		 * // Find the resources we have this turn that haven't already // been
-		 * allocated to an escrow account. // (We need to do this before
-		 * executing any plans, because those will // distort the escrow
-		 * figures.) var remainingResources = gameState.getResources(); for each
-		 * (var planGroup in this.planGroups)
-		 * remainingResources.subtract(planGroup.getEscrow());
-		 * 
-		 * Engine.ProfileStart("plan setup");
-		 *  // Compute plans from each module for each (var module in
-		 * this.modules) module.update(gameState, this.planGroups);
-		 *  // print(uneval(this.planGroups)+"\n");
-		 * 
-		 * Engine.ProfileStop(); Engine.ProfileStart("plan execute");
-		 *  // Execute as many plans as possible, and keep a record of // which
-		 * ones we can't afford yet var unaffordablePlans = []; for each (var
-		 * planGroup in this.planGroups) { var plan =
-		 * planGroup.executePlans(gameState); if (plan)
-		 * unaffordablePlans.push({"group": planGroup, "priority":
-		 * plan.priority, "plan": plan.plan}); }
-		 * 
-		 * Engine.ProfileStop();
-		 * 
-		 * this.ShareResources(remainingResources, unaffordablePlans);
-		 *  // print(uneval(this.planGroups)+"\n");
-		 *  // Reset the temporary plan data for each (var planGroup in
-		 * this.planGroups) planGroup.resetPlans();
-		 */
+
 		Engine.ProfileStop();
 	}
 
 	this.turn++;
 };
+

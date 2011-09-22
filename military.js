@@ -129,7 +129,7 @@ MilitaryAttackManager.prototype.update = function(gameState, queues) {
 	// Find the units ready to join the attack
 	var pending = gameState.getOwnEntitiesWithRole("attack-pending");
 	
-	warn("needed: " + this.targetSquadSize + " Have: " + pending.length);
+	warn("Troops needed for attack: " + this.targetSquadSize + " Have: " + pending.length);
 
 	// If we have enough units yet, start the attack
 	if (pending.length >= this.targetSquadSize && pending.length >= this.minAttackSize) {

@@ -57,7 +57,7 @@ function QBotAI(settings) {
 		house : 100,
 		villager : 100,
 		economicBuilding : 30,
-		field: 4,
+		field: 2,
 		militaryBuilding : 30,
 		militaryUnit : 20
 	};

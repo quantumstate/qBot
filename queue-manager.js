@@ -33,20 +33,47 @@ QueueManager.prototype.getAvailableResources = function(gameState) {
 };
 
 QueueManager.prototype.futureNeeds = function() {
-	// TODO: make prediction more accurate
-	// var futureNum = 20;
-	var needs = new Resources();
-	for (i in this.queues) {
-		var queueNeeds = new Resources();
-		for ( var j = 0; j < Math.min(10, this.queues[i].length()); j++) {
-			queueNeeds.add(this.queues[i].queue[j].getCost());
+	// Work out which plans will be executed next using priority and return the total cost of these plans
+	var recurse = function(queues, qm, number, depth){
+		var origNumber = number;
+		var needs = new Resources();
+		var totalPriority = 0;
+		for (var i = 0; i < queues.length; i++){
+			totalPriority += qm.priorities[queues[i]];
 		}
-		queueNeeds.multiply(this.priorities[i]);
-		needs.add(queueNeeds);
+		for (var i = 0; i < queues.length; i++){
+			var num = Math.round(((qm.priorities[queues[i]]/totalPriority) * number));
+			if (num < qm.queues[queues[i]].length()){
+				for ( var j = 0; j < num; j++) {
+					needs.add(qm.queues[queues[i]].queue[j].getCost());
+				}
+				number -= num;
+			}else{
+				for ( var j = 0; j < qm.queues[queues[i]].length(); j++) {
+					needs.add(qm.queues[queues[i]].queue[j].getCost());
+				}
+				queues.splice(i, 1);
+				i--;
+			}
+		}
+		// Check that more items were selected this call and that there are plans left to be allocated
+		// Also there is a fail-safe max depth 
+		if (origNumber !== number && number > 0 && depth < 20){
+			needs.add(recurse(queues, qm, number, depth + 1));
+		}
+		return needs;
+	};
+	
+	//number of plans to look at
+	var futureNum = 20;
+	var queues = [];
+	for (q in this.queues){
+		queues.push(q);
 	}
+	var needs = recurse(queues, this, futureNum, 0);
 	return {
 		"food" : needs.food,
-		"wood" : needs.wood,
+		"wood" : needs.wood + 15*needs.population, //TODO: read the house cost in case it changes in the future
 		"stone" : needs.stone,
 		"metal" : needs.metal
 	};
@@ -117,7 +144,6 @@ QueueManager.prototype.onlyUsesSpareAndUpdateSpare = function(unitCost, spare){
 QueueManager.prototype.update = function(gameState) {
 	// See if there is a high priority item from last time.
 	this.affordableToOutQueue(gameState);
-
 	do {
 		// pick out all affordable items, and list the ratios of (needed
 		// cost)/priority for unaffordable items.

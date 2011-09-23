@@ -123,8 +123,9 @@ BuildingConstructionPlan.prototype.findGoodPosition = function(gameState) {
 	obstructionMask |= gameState.getPassabilityClassMask("building-land");
 
 	var obstructionTiles = new Uint16Array(map.data.length);
-	for ( var i = 0; i < map.data.length; ++i)
+	for ( var i = 0; i < map.data.length; ++i){
 		obstructionTiles[i] = (map.data[i] & obstructionMask) ? 0 : 65535;
+	}
 
 	// Engine.DumpImage("tiles0.png", obstructionTiles, map.width,
 	// map.height, 64);
@@ -151,7 +152,7 @@ BuildingConstructionPlan.prototype.findGoodPosition = function(gameState) {
 	// Find target building's approximate obstruction radius,
 	// and expand by a bit to make sure we're not too close
 	var template = gameState.getTemplate(this.type);
-	var radius = Math.ceil(template.obstructionRadius() / cellSize) + 2;
+	var radius = Math.ceil(template.obstructionRadius() / cellSize) + 1;
 
 	// Find the best non-obstructed tile
 	var bestIdx = 0;
@@ -173,8 +174,8 @@ BuildingConstructionPlan.prototype.findGoodPosition = function(gameState) {
 	// Engine.DumpImage("tiles2.png", friendlyTiles, map.width, map.height,
 	// 256);
 
-	// Randomise the angle a little, to look less artificial
-	var angle = Math.PI + (Math.random() * 2 - 1) * Math.PI / 24;
+	// default angle
+	var angle = Math.PI/4;
 
 	return {
 		"x" : x,

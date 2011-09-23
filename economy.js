@@ -1,15 +1,15 @@
 var EconomyManager = function() {
 	this.targetNumWorkers = 100; // minimum number of workers we want
 	this.targetNumBuilders = 5; // number of workers we want working on
-	
+
 	this.targetNumFields = 5;
-	
+
 	this.gatherWeights = {
-			"food": 150,
-			"wood": 100,
-			"stone": 50,
-			"metal": 100,
-		};
+		"food" : 150,
+		"wood" : 100,
+		"stone" : 50,
+		"metal" : 100,
+	};
 };
 
 EconomyManager.prototype.buildMoreBuildings = function(gameState, planGroups) {
@@ -45,11 +45,12 @@ EconomyManager.prototype.trainMoreWorkers = function(gameState, queues) {
 };
 
 EconomyManager.prototype.pickMostNeededResources = function(gameState) {
-	
+
 	var self = this;
 
 	// Find what resource type we're most in need of
 	this.gatherWeights = gameState.ai.queueManager.futureNeeds();
+
 	var numGatherers = {};
 	for ( var type in this.gatherWeights)
 		numGatherers[type] = 0;
@@ -193,10 +194,10 @@ EconomyManager.prototype.assignToFoundations = function(gameState) {
 	});
 };
 
-EconomyManager.prototype.buildMoreFields = function(gameState, queues){
+EconomyManager.prototype.buildMoreFields = function(gameState, queues) {
 	var numFields = gameState.countEntitiesAndQueuedWithType(gameState.applyCiv("structures/{civ}_field"));
 	numFields += queues.field.totalLength();
-	
+
 	for ( var i = numFields; i < this.targetNumFields; i++) {
 		queues.field.addItem(new BuildingConstructionPlan(gameState, "structures/{civ}_field"));
 	}
@@ -204,12 +205,12 @@ EconomyManager.prototype.buildMoreFields = function(gameState, queues){
 
 EconomyManager.prototype.update = function(gameState, queues) {
 	Engine.ProfileStart("economy update");
-	
+
 	this.reassignRolelessUnits(gameState);
 
 	Engine.ProfileStart("Train workers and build farms");
 	this.trainMoreWorkers(gameState, queues);
-	
+
 	this.buildMoreFields(gameState, queues);
 	Engine.ProfileStop();
 

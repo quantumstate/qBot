@@ -1,5 +1,5 @@
 var EconomyManager = function() {
-	this.targetNumWorkers = 100; // minimum number of workers we want
+	this.targetNumWorkers = 60; // minimum number of workers we want
 	this.targetNumBuilders = 5; // number of workers we want working on
 
 	this.targetNumFields = 5;

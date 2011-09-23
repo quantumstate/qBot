@@ -62,6 +62,8 @@ function QBotAI(settings) {
 		militaryUnit : 20
 	};
 	this.queueManager = new QueueManager(this.queues, priorities);
+	
+	this.firstTime = true;
 
 }
 
@@ -73,7 +75,18 @@ QBotAI.prototype.OnUpdate = function() {
 	// the load
 	if ((this.turn + this.player) % 10 == 0) {
 		Engine.ProfileStart("qBot");
+		
 		var gameState = new GameState(this);
+		
+		// Some modules need the gameState to fully initialise
+		if (this.firstTime){
+			for (var i = 0; i < this.modules.length; i++){
+				if (this.modules[i].init){
+					this.modules[i].init(gameState);
+				}
+			}
+			this.firstTime = false;
+		}
 		
 		for (var i = 0; i < this.modules.length; i++){
 			this.modules[i].update(gameState, this.queues);

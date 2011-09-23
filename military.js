@@ -38,8 +38,19 @@ var MilitaryAttackManager = function() {
 	this.bCivAdvanced.cart = ["structures/{civ}_fortress", "structures/{civ}_embassy_celtic", "structures/{civ}_embassy_celtic_iberian", "structures/{civ}_embassy_italiote"];
 	
 	this.minAttackSize = 20;
+	this.maxAttacksize = 60;
 };
 
+MilitaryAttackManager.prototype.init = function(gameState){
+	var civ = gameState.playerData.civ; 
+	if (civ in this.uCivBasic){
+		this.uBasic = this.uCivBasic[civ];
+		this.uModerate = this.uCivModerate[civ];
+		this.uAdvanced = this.uCivAdvanced[civ];
+		
+		this.bAdvanced = this.bCivAdvanced[civ];
+	}
+};
 
 /**
  * Returns the unit type we should begin training. (Currently this is whatever
@@ -48,8 +59,8 @@ var MilitaryAttackManager = function() {
 MilitaryAttackManager.prototype.findBestNewUnit = function(gameState) {
 	// Count each type
 	var types = [];
-	for ( var tKey in this.squadTypes) {
-		var t = this.squadTypes[tKey];
+	for ( var tKey in this.uBasic) {
+		var t = this.uBasic[tKey];
 		types.push([ t, gameState.countEntitiesAndQueuedWithType(gameState.applyCiv(t)) ]);
 	}
 
@@ -65,17 +76,6 @@ MilitaryAttackManager.prototype.findBestNewUnit = function(gameState) {
 };
 
 MilitaryAttackManager.prototype.update = function(gameState, queues) {
-	
-	if (!("uBasic" in this)){
-		var civ = gameState.playerData.civ; 
-		if (civ in this.uCivBasic){
-			this.uBasic = this.uCivBasic[civ];
-			this.uModerate = this.uCivModerate[civ];
-			this.uAdvanced = this.uCivAdvanced[civ];
-			
-			this.bAdvanced = this.bCivAdvanced[civ];
-		}
-	}
 	
 	// Pause for a minute before starting any work, to give the economy a
 	// chance
@@ -118,7 +118,7 @@ MilitaryAttackManager.prototype.update = function(gameState, queues) {
 	// TODO: make military buildings better
 	//warn(gameState.countEntitiesWithType(gameState.applyCiv("units/{civ}_female_citizen")));
 	if (gameState.countEntitiesWithType(gameState.applyCiv("units/{civ}_support_female_citizen")) > 30){
-		if (gameState.countEntitiesAndQueuedWithType(gameState.applyCiv(this.bModerate[0])) + queues.militaryBuilding.totalLength() <= 2){
+		if (gameState.countEntitiesAndQueuedWithType(gameState.applyCiv(this.bModerate[0])) + queues.militaryBuilding.totalLength() < 2){
 			queues.militaryBuilding.addItem(new BuildingConstructionPlan(gameState, this.bModerate[0]));
 		}
 	}
@@ -132,7 +132,7 @@ MilitaryAttackManager.prototype.update = function(gameState, queues) {
 	warn("Troops needed for attack: " + this.targetSquadSize + " Have: " + pending.length);
 
 	// If we have enough units yet, start the attack
-	if (pending.length >= this.targetSquadSize && pending.length >= this.minAttackSize) {
+	if ((pending.length >= this.targetSquadSize && pending.length >= this.minAttackSize) || pending.length >= this.maxAttackSize) {
 		// Find the enemy CCs we could attack
 		var targets = gameState.entities.filter(function(ent) {
 			return (ent.isEnemy() && ent.hasClass("CivCentre"));

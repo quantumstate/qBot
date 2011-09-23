@@ -72,6 +72,7 @@ QueueManager.prototype.affordableToOutQueue = function(gameState) {
 	// for execution
 	for ( var i = 0; i < this.curItemQueue.length; i++) {
 		if (resources.canAfford(this.queues[this.curItemQueue[i]].getNext().getCost())) {
+			this.account[this.curItemQueue[i]] -= this.queues[this.curItemQueue[i]].getNext().getCost().toInt();
 			this.queues[this.curItemQueue[i]].nextToOutQueue();
 			resources = this.getAvailableResources(gameState);
 			this.curItemQueue[i] = null;
@@ -163,7 +164,7 @@ QueueManager.prototype.update = function(gameState) {
 					for (p in this.queues) {
 						this.account[p] += ratioMin * this.priorities[p];
 					}
-					this.account[ratioMinQueue] -= this.queues[ratioMinQueue].getNext().getCost().toInt();
+					//this.account[ratioMinQueue] -= this.queues[ratioMinQueue].getNext().getCost().toInt();
 					this.curItemQueue.push(ratioMinQueue);
 				}
 				delete ratio[ratioMinQueue];

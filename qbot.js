@@ -69,6 +69,18 @@ function QBotAI(settings) {
 
 QBotAI.prototype = new BaseAI();
 
+//Some modules need the gameState to fully initialise
+QBotAI.prototype.runInit = function(gameState){
+	if (this.firstTime){
+		for (var i = 0; i < this.modules.length; i++){
+			if (this.modules[i].init){
+				this.modules[i].init(gameState);
+			}
+		}
+		this.firstTime = false;
+	}
+};
+
 QBotAI.prototype.OnUpdate = function() {
 
 	// Run the update every n turns, offset depending on player ID to balance
@@ -78,15 +90,7 @@ QBotAI.prototype.OnUpdate = function() {
 		
 		var gameState = new GameState(this);
 		
-		// Some modules need the gameState to fully initialise
-		if (this.firstTime){
-			for (var i = 0; i < this.modules.length; i++){
-				if (this.modules[i].init){
-					this.modules[i].init(gameState);
-				}
-			}
-			this.firstTime = false;
-		}
+		this.runInit(gameState);
 		
 		for (var i = 0; i < this.modules.length; i++){
 			this.modules[i].update(gameState, this.queues);

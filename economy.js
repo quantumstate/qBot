@@ -10,6 +10,8 @@ var EconomyManager = function() {
 		"stone" : 50,
 		"metal" : 100,
 	};
+	
+	this.setCount = 0;
 };
 
 EconomyManager.prototype.buildMoreBuildings = function(gameState, planGroups) {
@@ -63,9 +65,9 @@ EconomyManager.prototype.pickMostNeededResources = function(gameState) {
 	var types = Object.keys(this.gatherWeights);
 	types.sort(function(a, b) {
 		// Prefer fewer gatherers (divided by weight)
-		var va = numGatherers[a] / self.gatherWeights[a];
-		var vb = numGatherers[b] / self.gatherWeights[b];
-		return va - vb;
+		var va = numGatherers[a] / (self.gatherWeights[a]+1);
+		var vb = numGatherers[b] / (self.gatherWeights[b]+1);
+		return va-vb;
 	});
 
 	return types;
@@ -82,7 +84,40 @@ EconomyManager.prototype.reassignRolelessUnits = function(gameState) {
 	});
 };
 
+EconomyManager.prototype.setWorkersIdleByPriority = function(gameState){
+	this.gatherWeights = gameState.ai.queueManager.futureNeeds();
+	
+	var numGatherers = {};
+	var totalGatherers = 0;
+	var totalWeight = 0;
+	for ( var type in this.gatherWeights){
+		numGatherers[type] = 0;
+		totalWeight += this.gatherWeights[type];
+	}
+
+	gameState.getOwnEntitiesWithRole("worker").forEach(function(ent) {
+		if (ent.getMetadata("subrole") === "gatherer"){
+			numGatherers[ent.getMetadata("gather-type")] += 1;
+			totalGatherers += 1;
+		}
+	});
+
+	for ( var type in this.gatherWeights){
+		var allocation = Math.floor(totalGatherers * (this.gatherWeights[type]/totalWeight));
+		if (allocation < numGatherers[type]){
+			var numToTake = numGatherers[type] - allocation;
+			gameState.getOwnEntitiesWithRole("worker").forEach(function(ent) {
+				if (ent.getMetadata("subrole") === "gatherer" && ent.getMetadata("gather-type") === type && numToTake > 0){
+					ent.setMetadata("subrole", "idle");
+					numToTake -= 1;
+				}
+			});
+		}
+	}
+};
+
 EconomyManager.prototype.reassignIdleWorkers = function(gameState) {
+	
 	var self = this;
 
 	// Search for idle workers, and tell them to gather resources
@@ -91,7 +126,7 @@ EconomyManager.prototype.reassignIdleWorkers = function(gameState) {
 	// resource demand.
 
 	var idleWorkers = gameState.getOwnEntitiesWithRole("worker").filter(function(ent) {
-		return ent.isIdle();
+		return (ent.isIdle() || ent.getMetadata("subrole") === "idle");
 	});
 
 	if (idleWorkers.length) {
@@ -213,6 +248,12 @@ EconomyManager.prototype.update = function(gameState, queues) {
 
 	this.buildMoreFields(gameState, queues);
 	Engine.ProfileStop();
+	
+	this.setCount += 1;
+	if (this.setCount >= 20){
+		this.setWorkersIdleByPriority(gameState);
+		this.setCount = 0;
+	}
 
 	this.reassignIdleWorkers(gameState);
 

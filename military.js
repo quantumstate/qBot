@@ -38,7 +38,7 @@ var MilitaryAttackManager = function() {
 	this.bCivAdvanced.cart = ["structures/{civ}_fortress", "structures/{civ}_embassy_celtic", "structures/{civ}_embassy_celtic_iberian", "structures/{civ}_embassy_italiote"];
 	
 	this.minAttackSize = 20;
-	this.maxAttacksize = 60;
+	this.maxAttackSize = 60;
 };
 
 MilitaryAttackManager.prototype.init = function(gameState){

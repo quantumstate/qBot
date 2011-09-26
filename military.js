@@ -87,7 +87,7 @@ MilitaryAttackManager.prototype.update = function(gameState, queues) {
 
 	// Continually try training new units, in batches of 5
 	if (queues.militaryUnit.totalLength() < 10){
-		queues.militaryUnit.addItem(new UnitTrainingPlan(gameState, this.findBestNewUnit(gameState), {
+		queues.militaryUnit.addItem(new UnitTrainingPlan(gameState, this.findBestNewUnit(gameState, queues), {
 			"role" : "attack-pending"
 		}, 5));
 	}

@@ -152,6 +152,10 @@ EconomyManager.prototype.reassignIdleWorkers = function(gameState) {
 					// Skip targets that are too hard to hunt
 					if (supply.entity.isUnhuntable())
 						return;
+					
+					// And don't go for the bloody fish!
+					if (supply.entity.hasClass("IsSeaCreature"))
+						return;
 
 					var dist = VectorDistance(supply.position, workerPosition);
 

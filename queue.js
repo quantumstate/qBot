@@ -69,3 +69,19 @@ Queue.prototype.totalLength = function(){
 Queue.prototype.outQueueLength = function(){
 	return this.outQueue.length;
 };
+
+Queue.prototype.countAllByType = function(t){
+	var count = 0;
+	
+	for (var i = 0; i < this.queue.length; i++){
+		if (this.queue[i].type === t){
+			count += this.queue[i].number;
+		} 
+	}
+	for (var i = 0; i < this.outQueue.length; i++){
+		if (this.outQueue[i].type === t){
+			count += this.outQueue[i].number;
+		} 
+	}
+	return count;
+};

@@ -67,6 +67,7 @@ function QBotAI(settings) {
 	
 	this.firstTime = true;
 
+	this.savedEvents = [];
 }
 
 QBotAI.prototype = new BaseAI();
@@ -85,6 +86,10 @@ QBotAI.prototype.runInit = function(gameState){
 
 QBotAI.prototype.OnUpdate = function() {
 
+	if (this.events.length > 0){
+		this.savedEvents = this.savedEvents.concat(this.events);
+	}
+
 	// Run the update every n turns, offset depending on player ID to balance
 	// the load
 	if ((this.turn + this.player) % 10 == 0) {
@@ -95,10 +100,13 @@ QBotAI.prototype.OnUpdate = function() {
 		this.runInit(gameState);
 		
 		for (var i = 0; i < this.modules.length; i++){
-			this.modules[i].update(gameState, this.queues);
+			this.modules[i].update(gameState, this.queues, this.savedEvents);
 		}
 		
 		this.queueManager.update(gameState);
+		
+		delete this.savedEvents;
+		this.savedEvents = [];
 
 		Engine.ProfileStop();
 	}

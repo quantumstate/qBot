@@ -154,7 +154,7 @@ EconomyManager.prototype.reassignIdleWorkers = function(gameState) {
 						return;
 					
 					// And don't go for the bloody fish!
-					if (supply.entity.hasClass("IsSeaCreature"))
+					if (supply.entity.hasClass("SeaCreature"))
 						return;
 
 					var dist = VectorDistance(supply.position, workerPosition);

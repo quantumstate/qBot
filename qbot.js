@@ -48,7 +48,8 @@ function QBotAI(settings) {
 		economicBuilding : new Queue(),
 		field : new Queue(),
 		militaryBuilding : new Queue(),
-		militaryUnit : new Queue()
+		militaryUnit : new Queue(),
+		civilCentre: new Queue()
 	};
 
 	this.productionQueues = [];
@@ -59,7 +60,8 @@ function QBotAI(settings) {
 		economicBuilding : 30,
 		field: 1,
 		militaryBuilding : 30,
-		militaryUnit : 20
+		militaryUnit : 20,
+		civilCentre: 1000
 	};
 	this.queueManager = new QueueManager(this.queues, priorities);
 	

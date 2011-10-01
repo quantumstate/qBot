@@ -242,10 +242,21 @@ EconomyManager.prototype.buildMoreFields = function(gameState, queues) {
 	}
 };
 
+EconomyManager.prototype.buildNewCC= function(gameState, queues) {
+	var numCCs = gameState.countEntitiesAndQueuedWithType(gameState.applyCiv("structures/{civ}_civil_centre"));
+	numCCs += queues.civilCentre.totalLength();
+
+	for ( var i = numCCs; i < 1; i++) {
+		queues.civilCentre.addItem(new BuildingConstructionPlan(gameState, "structures/{civ}_civil_centre"));
+	}
+};
+
 EconomyManager.prototype.update = function(gameState, queues) {
 	Engine.ProfileStart("economy update");
 
 	this.reassignRolelessUnits(gameState);
+	
+	this.buildNewCC(gameState,queues);
 
 	Engine.ProfileStart("Train workers and build farms");
 	this.trainMoreWorkers(gameState, queues);

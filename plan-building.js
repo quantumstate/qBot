@@ -93,7 +93,8 @@ BuildingConstructionPlan.prototype.expandInfluences = function(grid, w, h) {
 /**
  * Add a circular linear-falloff shape to a grid.
  */
-BuildingConstructionPlan.prototype.addInfluence = function(grid, w, h, cx, cy, maxDist) {
+BuildingConstructionPlan.prototype.addInfluence = function(grid, w, h, cx, cy, maxDist, strength) {
+	strength = strength ? strength : 1;
 	var x0 = Math.max(0, cx - maxDist);
 	var y0 = Math.max(0, cy - maxDist);
 	var x1 = Math.min(w, cx + maxDist);
@@ -104,12 +105,13 @@ BuildingConstructionPlan.prototype.addInfluence = function(grid, w, h, cx, cy, m
 			var dy = y - cy;
 			var r = Math.sqrt(dx * dx + dy * dy);
 			if (r < maxDist)
-				grid[x + y * w] += maxDist - r;
+				grid[x + y * w] += strength * (maxDist - r);
 		}
 	}
 };
 
 BuildingConstructionPlan.prototype.findGoodPosition = function(gameState) {
+	var template = gameState.getTemplate(this.type);
 	var self = this;
 
 	var cellSize = 4; // size of each tile
@@ -145,14 +147,24 @@ BuildingConstructionPlan.prototype.findGoodPosition = function(gameState) {
 			var pos = ent.position();
 			var x = Math.round(pos[0] / cellSize);
 			var z = Math.round(pos[1] / cellSize);
-			self.addInfluence(friendlyTiles, map.width, map.height, x, z, infl);
+			if (template._template.BuildRestrictions.Category === "Field"){
+				if (ent.resourceDropsiteTypes() && ent.resourceDropsiteTypes().indexOf("food") !== -1){
+					self.addInfluence(friendlyTiles, map.width, map.height, x, z, infl);
+				}
+			}else{
+				self.addInfluence(friendlyTiles, map.width, map.height, x, z, infl);
+				if (ent.hasClass("CivCentre")){
+					self.addInfluence(friendlyTiles, map.width, map.height, x, z, infl/8, -4);
+				}
+			}
+			
+				
 		}
 	});
 
 	// Find target building's approximate obstruction radius,
 	// and expand by a bit to make sure we're not too close
-	var template = gameState.getTemplate(this.type);
-	var radius = Math.ceil(template.obstructionRadius() / cellSize) + 1;
+	var radius = Math.ceil(template.obstructionRadius() / cellSize);
 
 	// Find the best non-obstructed tile
 	var bestIdx = 0;

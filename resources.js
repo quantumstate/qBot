@@ -17,7 +17,7 @@ function Resources(amounts, population) {
 	} else {
 		this.population = 0;
 	}
-};
+}
 
 Resources.prototype.types = [ "food", "wood", "stone", "metal" ];
 

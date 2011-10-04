@@ -264,7 +264,6 @@ QueueManager.prototype.update = function(gameState) {
 				if (this.queues[p].outQueueNext().canExecute(gameState)){
 					this.queues[p].executeNext(gameState);
 				}else{
-					warn("Couldn't execute " + this.queues[p].outQueueNext().type);
 					break;
 				}
 			}

@@ -264,7 +264,7 @@ MilitaryAttackManager.prototype.update = function(gameState, queues, events) {
 	Engine.ProfileStart("military update");
 	this.gameState = gameState;
 
-	this.handleEvents(gameState, events);
+	//this.handleEvents(gameState, events);
 
 	//warn(uneval(this.assigned));
 	//warn(uneval(this.unassigned));

@@ -58,9 +58,9 @@ function QBotAI(settings) {
 		house : 100,
 		villager : 100,
 		economicBuilding : 30,
-		field: 1,
+		field: 4,
 		militaryBuilding : 30,
-		militaryUnit : 20,
+		militaryUnit : 30,
 		civilCentre: 1000
 	};
 	this.queueManager = new QueueManager(this.queues, priorities);

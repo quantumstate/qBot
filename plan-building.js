@@ -8,6 +8,7 @@ var BuildingConstructionPlan = function(gameState, type) {
 	}
 	this.category = "building";
 	this.cost = new Resources(template.cost());
+	this.number = 1;
 };
 
 BuildingConstructionPlan.prototype.canExecute = function(gameState) {

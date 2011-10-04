@@ -62,6 +62,14 @@ Queue.prototype.length = function() {
 	return this.queue.length;
 };
 
+Queue.prototype.countQueuedUnits = function(){
+	var count = 0;
+	for (i in this.queue){
+		count += this.queue[i].number;
+	}
+	return count;
+};
+
 Queue.prototype.totalLength = function(){
 	return this.queue.length + this.outQueue.length;
 };

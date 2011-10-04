@@ -51,7 +51,7 @@ EconomyManager.prototype.pickMostNeededResources = function(gameState) {
 	var self = this;
 
 	// Find what resource type we're most in need of
-	this.gatherWeights = gameState.ai.queueManager.futureNeeds();
+	this.gatherWeights = gameState.ai.queueManager.futureNeeds(gameState);
 
 	var numGatherers = {};
 	for ( var type in this.gatherWeights)
@@ -85,7 +85,7 @@ EconomyManager.prototype.reassignRolelessUnits = function(gameState) {
 };
 
 EconomyManager.prototype.setWorkersIdleByPriority = function(gameState){
-	this.gatherWeights = gameState.ai.queueManager.futureNeeds();
+	this.gatherWeights = gameState.ai.queueManager.futureNeeds(gameState);
 	
 	var numGatherers = {};
 	var totalGatherers = 0;

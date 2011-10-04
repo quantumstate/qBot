@@ -32,10 +32,9 @@ QueueManager.prototype.getAvailableResources = function(gameState) {
 	return resources;
 };
 
-QueueManager.prototype.futureNeeds = function() {
+QueueManager.prototype.futureNeeds = function(gameState) {
 	// Work out which plans will be executed next using priority and return the total cost of these plans
 	var recurse = function(queues, qm, number, depth){
-		var origNumber = number;
 		var needs = new Resources();
 		var totalPriority = 0;
 		for (var i = 0; i < queues.length; i++){
@@ -43,14 +42,17 @@ QueueManager.prototype.futureNeeds = function() {
 		}
 		for (var i = 0; i < queues.length; i++){
 			var num = Math.round(((qm.priorities[queues[i]]/totalPriority) * number));
-			if (num < qm.queues[queues[i]].length()){
-				for ( var j = 0; j < num; j++) {
+			if (num < qm.queues[queues[i]].countQueuedUnits()){
+				var cnt = 0;
+				for ( var j = 0; cnt < num; j++) {
+					cnt += qm.queues[queues[i]].queue[j].number;
 					needs.add(qm.queues[queues[i]].queue[j].getCost());
+					number -= qm.queues[queues[i]].queue[j].number;
 				}
-				number -= num;
 			}else{
 				for ( var j = 0; j < qm.queues[queues[i]].length(); j++) {
 					needs.add(qm.queues[queues[i]].queue[j].getCost());
+					number -= qm.queues[queues[i]].queue[j].number;
 				}
 				queues.splice(i, 1);
 				i--;
@@ -58,13 +60,15 @@ QueueManager.prototype.futureNeeds = function() {
 		}
 		// Check that more items were selected this call and that there are plans left to be allocated
 		// Also there is a fail-safe max depth 
-		if (origNumber !== number && number > 0 && depth < 20){
+		if (queues.length > 0 && number > 0 && depth < 20){
 			needs.add(recurse(queues, qm, number, depth + 1));
 		}
 		return needs;
 	};
 	
 	//number of plans to look at
+	var current = this.getAvailableResources(gameState);
+	
 	var futureNum = 20;
 	var queues = [];
 	for (q in this.queues){
@@ -72,10 +76,10 @@ QueueManager.prototype.futureNeeds = function() {
 	}
 	var needs = recurse(queues, this, futureNum, 0);
 	return {
-		"food" : needs.food,
-		"wood" : needs.wood + 15*needs.population, //TODO: read the house cost in case it changes in the future
-		"stone" : needs.stone,
-		"metal" : needs.metal
+		"food" : Math.max(needs.food - current.food, 0) + 150,
+		"wood" : Math.max(needs.wood + 15*needs.population - current.wood, 0) + 150, //TODO: read the house cost in case it changes in the future
+		"stone" : Math.max(needs.stone - current.stone, 0) + 100,
+		"metal" : Math.max(needs.metal - current.metal, 0) + 100
 	};
 };
 
@@ -112,7 +116,6 @@ QueueManager.prototype.affordableToOutQueue = function(gameState) {
 					available[key] = false;
 				}
 			}
-
 		}
 	}
 
@@ -139,6 +142,45 @@ QueueManager.prototype.onlyUsesSpareAndUpdateSpare = function(unitCost, spare){
 		}
 	}
 	return ret;
+};
+
+String.prototype.rpad = function(padString, length) {
+	var str = this;
+    while (str.length < length)
+        str = str + padString;
+    return str;
+};
+
+QueueManager.prototype.printQueues = function(){
+	warn("OUTQUEUES");
+	for (i in this.queues){
+		var qStr = "";
+		var q = this.queues[i];
+		for (j in q.outQueue){
+			qStr += q.outQueue[j].type + " ";
+			if (q.outQueue[j].number)
+				qStr += "x" + q.outQueue[j].number;
+		}
+		if (qStr != ""){
+			warn((i + ":").rpad(" ", 20) + qStr);
+		}
+	}
+	
+	warn("INQUEUES");
+	for (i in this.queues){
+		var qStr = "";
+		var q = this.queues[i];
+		for (j in q.queue){
+			qStr += q.queue[j].type + " ";
+			if (q.queue[j].number)
+				qStr += "x" + q.queue[j].number;
+			qStr += "    ";
+		}
+		if (qStr != ""){
+			warn((i + ":").rpad(" ", 20) + qStr);
+		}
+	}
+	warn("Accounts: " + uneval(this.account));
 };
 
 QueueManager.prototype.update = function(gameState) {
@@ -219,8 +261,14 @@ QueueManager.prototype.update = function(gameState) {
 					break;
 				}
 			} else {
-				this.queues[p].executeNext(gameState);
+				if (this.queues[p].outQueueNext().canExecute(gameState)){
+					this.queues[p].executeNext(gameState);
+				}else{
+					warn("Couldn't execute " + this.queues[p].outQueueNext().type);
+					break;
+				}
 			}
 		}
 	}
+	//warn(uneval(this.futureNeeds(gameState)));
 };

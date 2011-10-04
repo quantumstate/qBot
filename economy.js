@@ -14,6 +14,10 @@ var EconomyManager = function() {
 	this.setCount = 0;
 };
 
+EconomyManager.prototype.init = function(gameState){
+	this.targetNumWorkers = Math.floor(gameState.getPopulationMax()/3);
+};
+
 EconomyManager.prototype.buildMoreBuildings = function(gameState, planGroups) {
 	// Limit ourselves to constructing one building at a time
 	if (gameState.findFoundations().length)
@@ -34,7 +38,7 @@ EconomyManager.prototype.buildMoreBuildings = function(gameState, planGroups) {
 EconomyManager.prototype.trainMoreWorkers = function(gameState, queues) {
 	// Count the workers in the world and in progress
 	var numWorkers = gameState.countEntitiesAndQueuedWithRole("worker");
-	numWorkers += queues.villager.length();
+	numWorkers += queues.villager.totalLength();
 
 	// If we have too few, train more
 	if (numWorkers < this.targetNumWorkers) {
@@ -234,6 +238,9 @@ EconomyManager.prototype.assignToFoundations = function(gameState) {
 };
 
 EconomyManager.prototype.buildMoreFields = function(gameState, queues) {
+	// give time for treasures to be gathered
+	if (gameState.getTimeElapsed() < 30 * 1000)
+		return;
 	var numFields = gameState.countEntitiesAndQueuedWithType(gameState.applyCiv("structures/{civ}_field"));
 	numFields += queues.field.totalLength();
 
@@ -253,7 +260,7 @@ EconomyManager.prototype.buildNewCC= function(gameState, queues) {
 
 EconomyManager.prototype.update = function(gameState, queues) {
 	Engine.ProfileStart("economy update");
-
+	
 	this.reassignRolelessUnits(gameState);
 	
 	this.buildNewCC(gameState,queues);

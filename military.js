@@ -116,6 +116,14 @@ MilitaryAttackManager.prototype.update = function(gameState, queues) {
 	}
 	//warn(uneval(enemyStrength));
 	
+MilitaryAttackManager.prototype.buildDefences = function(gameState, queues){ 
+	if (gameState.countEntitiesAndQueuedWithType(gameState.applyCiv('structures/{civ}_scout_tower'))
+			+ queues.defenceBuilding.totalLength() < 6) {
+		queues.defenceBuilding.addItem(new BuildingConstructionPlan(gameState, 'structures/{civ}_scout_tower'));
+	}
+};
+
+	this.buildDefences(gameState, queues);
 	// Build more military buildings
 	// TODO: make military buildings better
 	// warn(gameState.countEntitiesWithType(gameState.applyCiv("units/{civ}_female_citizen")));

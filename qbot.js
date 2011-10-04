@@ -48,6 +48,7 @@ function QBotAI(settings) {
 		economicBuilding : new Queue(),
 		field : new Queue(),
 		militaryBuilding : new Queue(),
+		defenceBuilding : new Queue(),
 		militaryUnit : new Queue(),
 		civilCentre: new Queue()
 	};
@@ -60,6 +61,7 @@ function QBotAI(settings) {
 		economicBuilding : 30,
 		field: 4,
 		militaryBuilding : 30,
+		defenceBuilding: 5,
 		militaryUnit : 30,
 		civilCentre: 1000
 	};

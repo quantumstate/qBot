@@ -61,13 +61,17 @@ EconomyManager.prototype.pickMostNeededResources = function(gameState) {
 };
 
 EconomyManager.prototype.reassignRolelessUnits = function(gameState) {
+	//TODO: Move this out of the economic section
 	var roleless = gameState.getOwnEntitiesWithRole(undefined);
 
 	roleless.forEach(function(ent) {
-		if (ent.hasClass("Worker"))
+		if (ent.hasClass("Worker")){
 			ent.setMetadata("role", "worker");
-		else
+		}else if(ent.hasClass("CitizenSoldier") || ent.hasClass("Super")){
+			ent.setMetadata("role", "soldier");
+		}else{
 			ent.setMetadata("role", "unknown");
+		}
 	});
 };
 

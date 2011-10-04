@@ -41,7 +41,7 @@ var MilitaryAttackManager = function() {
 	this.bModerate = [ "structures/{civ}_barracks" ];
 
 	this.bCivAdvanced = {};
-	this.bCivAdvanced.hele = [ "structures/{civ}_gymnasium" ];
+	this.bCivAdvanced.hele = [ "structures/{civ}_gymnasion" ];
 	this.bCivAdvanced.cart = [ "structures/{civ}_fortress", "structures/{civ}_embassy_celtic", "structures/{civ}_embassy_iberian", "structures/{civ}_embassy_italiote" ];
 
 	this.attackManager = new WalkToCC();

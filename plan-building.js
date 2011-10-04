@@ -4,6 +4,7 @@ var BuildingConstructionPlan = function(gameState, type) {
 	var template = gameState.getTemplate(this.type);
 	if (!template) {
 		this.invalidTemplate = true;
+		warn("Cannot build " + this.type);
 		return;
 	}
 	this.category = "building";

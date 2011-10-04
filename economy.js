@@ -18,23 +18,6 @@ EconomyManager.prototype.init = function(gameState){
 	this.targetNumWorkers = Math.floor(gameState.getPopulationMax()/3);
 };
 
-EconomyManager.prototype.buildMoreBuildings = function(gameState, planGroups) {
-	// Limit ourselves to constructing one building at a time
-	if (gameState.findFoundations().length)
-		return;
-
-	for ( var buildingKey in this.targetBuildings) {
-		var building = this.targetBuildings[buildingKey];
-		var numBuildings = gameState.countEntitiesAndQueuedWithType(gameState.applyCiv(building.template));
-
-		// If we have too few, build another
-		if (numBuildings < building.count) {
-			planGroups.economyConstruction.addPlan(building.priority, new BuildingConstructionPlan(gameState,
-					building.template));
-		}
-	}
-};
-
 EconomyManager.prototype.trainMoreWorkers = function(gameState, queues) {
 	// Count the workers in the world and in progress
 	var numWorkers = gameState.countEntitiesAndQueuedWithRole("worker");

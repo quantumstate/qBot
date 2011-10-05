@@ -127,53 +127,57 @@ function debug(output){
 }
 
 // TODO: Remove when the code gets patched in the common API
-QBotAI.prototype.HandleMessage = function(state)
+QBotAI.prototype.ApplyEntitiesDelta = function(state)
 {
-	if (!this._rawEntities)
+	Engine.ProfileStart("ApplyEntitiesDelta");
+
+	for each (var evt in state.events)
 	{
-		// Do a (shallow) clone of all the initial entity properties (in order
-		// to copy into our own script context and minimise cross-context
-		// weirdness), and remember the entities owned by our player
-		this._rawEntities = {};
-		for (var id in state.entities)
+		if (evt.type == "Create")
 		{
-			var ent = state.entities[id];
-
-			this._rawEntities[id] = {};
-			for (var prop in ent)
-				this._rawEntities[id][prop] = ent[prop];
-
-			if (ent.owner === this._player)
-				this._ownEntities[id] = this._rawEntities[id];
+			this._rawEntities[evt.msg.entity] = {};
+		}
+		else if (evt.type == "Destroy")
+		{
+			evt.msg.metadata = (evt.msg.metadata || []);
+			evt.msg.rawEntity = (evt.msg.rawEntity || this._rawEntities[evt.msg.entity]);
+			
+			evt.msg.metadata[this._player] = this._entityMetadata[evt.msg.entity];
+			
+			delete this._rawEntities[evt.msg.entity];
+			delete this._entityMetadata[evt.msg.entity];
+			delete this._ownEntities[evt.msg.entity];
+		}
+		else if (evt.type == "TrainingFinished")
+		{
+			// Apply metadata stored in training queues, but only if they
+			// look like they were added by us
+			if (evt.msg.owner === this._player)
+				for each (var ent in evt.msg.entities)
+					this._entityMetadata[ent] = ShallowClone(evt.msg.metadata);
 		}
 	}
-	else
+
+	for (var id in state.entities)
 	{
-		this.ApplyEntitiesDelta(state);
+		var changes = state.entities[id];
+
+		if ("owner" in changes)
+		{
+			var wasOurs = (this._rawEntities[id].owner !== undefined
+				&& this._rawEntities[id].owner === this._player);
+
+			var isOurs = (changes.owner === this._player);
+
+			if (wasOurs && !isOurs)
+				delete this._ownEntities[id];
+			else if (!wasOurs && isOurs)
+				this._ownEntities[id] = this._rawEntities[id];
+		}
+
+		for (var prop in changes)
+			this._rawEntities[id][prop] = changes[prop];
 	}
 
-	Engine.ProfileStart("HandleMessage setup");
-
-	this.entities = new EntityCollection(this, this._rawEntities);
-	this.events = state.events;
-	this.map = state.map;
-	this.passabilityClasses = state.passabilityClasses;
-	this.player = this._player;
-	this.playerData = state.players[this._player];
-	this.templates = this._templates;
-	this.timeElapsed = state.timeElapsed;
-
 	Engine.ProfileStop();
-
-	this.OnUpdate();
-
-	// Clean up temporary properties, so they don't disturb the serializer
-	delete this.entities;
-	delete this.events;
-	delete this.map;
-	delete this.passabilityClasses;
-	delete this.player;
-	delete this.playerData;
-	delete this.templates;
-	delete this.timeElapsed;
 };

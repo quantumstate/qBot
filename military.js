@@ -41,8 +41,10 @@ var MilitaryAttackManager = function() {
 	this.bModerate = [ "structures/{civ}_barracks" ];
 
 	this.bCivAdvanced = {};
-	this.bCivAdvanced.hele = [ "structures/{civ}_gymnasion" ];
+	this.bCivAdvanced.hele = [ "structures/{civ}_gymnasion", "structures/{civ}_fortress" ];
 	this.bCivAdvanced.cart = [ "structures/{civ}_fortress", "structures/{civ}_embassy_celtic", "structures/{civ}_embassy_iberian", "structures/{civ}_embassy_italiote" ];
+	this.bCivAdvanced.celt = [ "structures/{civ}_kennel", "structures/{civ}_fortress_b", "structures/{civ}_fortress_g" ];
+	this.bCivAdvanced.iber = [ "structures/{civ}_fortress" ];
 
 	this.attackManager = new WalkToCC();
 };

@@ -21,7 +21,7 @@ EconomyManager.prototype.init = function(gameState){
 EconomyManager.prototype.trainMoreWorkers = function(gameState, queues) {
 	// Count the workers in the world and in progress
 	var numWorkers = gameState.countEntitiesAndQueuedWithRole("worker");
-	numWorkers += queues.villager.totalLength();
+	numWorkers += queues.villager.countTotalQueuedUnits();
 
 	// If we have too few, train more
 	if (numWorkers < this.targetNumWorkers) {

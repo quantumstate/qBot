@@ -70,6 +70,25 @@ Queue.prototype.countQueuedUnits = function(){
 	return count;
 };
 
+Queue.prototype.countOutQueuedUnits = function(){
+	var count = 0;
+	for (i in this.outQueue){
+		count += this.outQueue[i].number;
+	}
+	return count;
+};
+
+Queue.prototype.countTotalQueuedUnits = function(){
+	var count = 0;
+	for (i in this.queue){
+		count += this.queue[i].number;
+	}
+	for (i in this.outQueue){
+		count += this.outQueue[i].number;
+	}
+	return count;
+};
+
 Queue.prototype.totalLength = function(){
 	return this.queue.length + this.outQueue.length;
 };

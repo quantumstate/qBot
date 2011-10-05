@@ -9,13 +9,17 @@ WalkToCC.prototype.execute = function(gameState, militaryManager){
 	this.targetSquadSize = maxStrength * 2;
 	
 	// Find the units ready to join the attack
-	var pending = gameState.getOwnEntitiesWithRole("attack-pending");
+	var availableCount = militaryManager.countAvailableUnits();
+	//var pending = gameState.getOwnEntitiesWithRole("attack-pending");
 	
-	//warn("Troops needed for attack: " + this.targetSquadSize + " Have: " + pending.length);
+	debug("Troops needed for attack: " + this.targetSquadSize + " Have: " + availableCount);
 	
 	// If we have enough units yet, start the attack
-	if ((pending.length >= this.targetSquadSize && pending.length >= this.minAttackSize)
-			|| pending.length >= this.maxAttackSize) {
+	if ((availableCount >= this.targetSquadSize && availableCount >= this.minAttackSize)
+			|| availableCount >= this.maxAttackSize) {
+		var idList = militaryManager.getAvailableUnits(availableCount);
+		var pending = EntityCollectionFromIds(gameState, idList);
+		
 		// Find the enemy CCs we could attack
 		var targets = gameState.entities.filter(function(ent) {
 			return (ent.isEnemy() && ent.hasClass("CivCentre"));

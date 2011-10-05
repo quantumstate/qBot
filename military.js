@@ -119,7 +119,7 @@ MilitaryAttackManager.prototype.registerSoldiers = function(gameState) {
 
 	soldiers.forEach(function(ent) {
 		ent.setMetadata("role", "registeredSoldier");
-		ent.setMetadata("role", "attack-pending");
+		//ent.setMetadata("role", "attack-pending");
 		self.soldiers[ent.id()] = true;
 		self.unassigned[ent.id()] = true;
 	});
@@ -164,7 +164,7 @@ MilitaryAttackManager.prototype.defence = function(gameState) {
 		var ent = new Entity(gameState.ai, ents[id]);
 		if (ent.getMetadata("attackers") === undefined || ent.getMetadata("attackers").length < defendersPerAttacker) {
 			var tasked = this.getAvailableUnits(3);
-			warn(uneval(tasked));
+			//warn(uneval(tasked));
 			if (tasked.length > 0) {
 				Engine.PostCommand({
 					"type" : "attack",
@@ -199,6 +199,16 @@ MilitaryAttackManager.prototype.getAvailableUnits = function(n) {
 	return ret;
 };
 
+MilitaryAttackManager.prototype.countAvailableUnits = function(){
+	var count = 0;
+	for (i in this.unassigned){
+		if (this.unassigned[i]){
+			count += 1;
+		}
+	}
+	return count;
+};
+
 MilitaryAttackManager.prototype.handleEvents = function(gameState, events) {
 	for (i in events) {
 		var e = events[i];
@@ -209,6 +219,24 @@ MilitaryAttackManager.prototype.handleEvents = function(gameState, events) {
 			delete this.assigned[id];
 			delete this.soldiers[id];
 			var metadata = e.msg.metadata[gameState.ai._player];
+			if (metadata && metadata.attacking){
+				var attacking = this.entity(metadata.attacking);
+				if (attacking){
+					var attackers = attacking.getMetadata('attackers');
+					attackers.splice(attackers.indexOf(metadata.attacking), 1);
+					attacking.setMetadata('attackers', attackers);
+				}
+			}
+			if (metadata && metadata.attackers){
+				for (i in metadata.attackers){
+					var attacker = this.entity(metadata.attackers[i]);
+					if (attacker){
+						attacker.deleteMetadata('attacking');
+						this.unassigned[attacker.id()] = true;
+						this.assigned[attacker.id()] = false;
+					}
+				}
+			}
 		}
 	}
 	// ({type:"Destroy", msg:{entity:1131}})({type:"Destroy",
@@ -219,7 +247,7 @@ MilitaryAttackManager.prototype.entity = function(id) {
 	if (this.gameState.entities._entities[id]) {
 		return new Entity(this.gameState.ai, this.gameState.entities._entities[id]);
 	}else{
-		warn("Entity " + id + " requested does not exist");
+		debug("Entity " + id + " requested does not exist");
 	}
 	return false;
 };
@@ -264,14 +292,14 @@ MilitaryAttackManager.prototype.update = function(gameState, queues, events) {
 	Engine.ProfileStart("military update");
 	this.gameState = gameState;
 
-	//this.handleEvents(gameState, events);
+	this.handleEvents(gameState, events);
 
 	//warn(uneval(this.assigned));
 	//warn(uneval(this.unassigned));
 
 	// this.attackElephants(gameState);
 	this.registerSoldiers(gameState);
-	//this.defence(gameState);
+	this.defence(gameState);
 	this.buildDefences(gameState, queues);
 
 	// Continually try training new units, in batches of 5

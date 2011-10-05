@@ -33,8 +33,6 @@
  */
 
 function QBotAI(settings) {
-	// warn("Constructing TestBotAI for player "+settings.player);
-
 	BaseAI.call(this, settings);
 
 	this.turn = 0;
@@ -44,12 +42,12 @@ function QBotAI(settings) {
 	// this.queues cannot be modified past initialisation or queue-manager will break
 	this.queues = {
 		house : new Queue(),
+		militaryUnit : new Queue(),
 		villager : new Queue(),
 		economicBuilding : new Queue(),
 		field : new Queue(),
 		militaryBuilding : new Queue(),
 		defenceBuilding : new Queue(),
-		militaryUnit : new Queue(),
 		civilCentre: new Queue()
 	};
 
@@ -57,12 +55,12 @@ function QBotAI(settings) {
 	
 	var priorities = {
 		house : 100,
+		militaryUnit : 50,
 		villager : 100,
 		economicBuilding : 30,
 		field: 4,
 		militaryBuilding : 30,
 		defenceBuilding: 5,
-		militaryUnit : 30,
 		civilCentre: 1000
 	};
 	this.queueManager = new QueueManager(this.queues, priorities);
@@ -120,6 +118,62 @@ var debugOn = false;
 
 function debug(output){
 	if (debugOn){
-		warn(uneval(output));
+		if (typeof output === "string"){
+			warn(output);
+		}else{
+			warn(uneval(output));
+		}
 	}
 }
+
+// TODO: Remove when the code gets patched in the common API
+QBotAI.prototype.HandleMessage = function(state)
+{
+	if (!this._rawEntities)
+	{
+		// Do a (shallow) clone of all the initial entity properties (in order
+		// to copy into our own script context and minimise cross-context
+		// weirdness), and remember the entities owned by our player
+		this._rawEntities = {};
+		for (var id in state.entities)
+		{
+			var ent = state.entities[id];
+
+			this._rawEntities[id] = {};
+			for (var prop in ent)
+				this._rawEntities[id][prop] = ent[prop];
+
+			if (ent.owner === this._player)
+				this._ownEntities[id] = this._rawEntities[id];
+		}
+	}
+	else
+	{
+		this.ApplyEntitiesDelta(state);
+	}
+
+	Engine.ProfileStart("HandleMessage setup");
+
+	this.entities = new EntityCollection(this, this._rawEntities);
+	this.events = state.events;
+	this.map = state.map;
+	this.passabilityClasses = state.passabilityClasses;
+	this.player = this._player;
+	this.playerData = state.players[this._player];
+	this.templates = this._templates;
+	this.timeElapsed = state.timeElapsed;
+
+	Engine.ProfileStop();
+
+	this.OnUpdate();
+
+	// Clean up temporary properties, so they don't disturb the serializer
+	delete this.entities;
+	delete this.events;
+	delete this.map;
+	delete this.passabilityClasses;
+	delete this.player;
+	delete this.playerData;
+	delete this.templates;
+	delete this.timeElapsed;
+};

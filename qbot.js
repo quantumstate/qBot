@@ -55,7 +55,7 @@ function QBotAI(settings) {
 	
 	var priorities = {
 		house : 100,
-		militaryUnit : 50,
+		militaryUnit : 100,
 		villager : 100,
 		economicBuilding : 30,
 		field: 4,

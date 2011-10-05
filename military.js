@@ -193,6 +193,7 @@ MilitaryAttackManager.prototype.getAvailableUnits = function(n) {
 		ret.push(+i);
 		delete this.unassigned[i];
 		this.assigned[i] = true;
+		this.entity(i).setMetadata("role", "soldier");
 		count++;
 		if (count >= n) {
 			break;
@@ -333,6 +334,13 @@ MilitaryAttackManager.prototype.update = function(gameState, queues, events) {
 	}
 	
 	this.attackManager.execute(gameState, this);
+	
+	// Set unassigned to be workers
+	for (i in this.unassigned){
+		if (this.entity(i).hasClass("CitizenSoldier") && ! this.entity(i).hasClass("Cavalry")){
+			this.entity(i).setMetadata("role", "worker");
+		}
+	}
 
 	Engine.ProfileStop();
 };

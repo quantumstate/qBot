@@ -146,7 +146,8 @@ MilitaryAttackManager.prototype.defence = function(gameState) {
 		gameState.entities
 				.forEach(function(ent) {
 					if (gameState.playerData.isEnemy[ent.owner()]
-							&& (ent.hasClass("CitizenSoldier") || ent.hasClass("Super"))) {
+							&& (ent.hasClass("CitizenSoldier") || ent.hasClass("Super"))
+							&& ent.position()) {
 						var distSquared = (ent.position()[0] - pos[0]) * (ent.position()[0] - pos[0])
 								+ (ent.position()[1] - pos[1]) * (ent.position()[1] - pos[1]);
 						if (distSquared < defenceRange * defenceRange) {

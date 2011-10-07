@@ -120,25 +120,15 @@ BuildingConstructionPlan.prototype.findGoodPosition = function(gameState) {
 
 	// First, find all tiles that are far enough away from obstructions:
 
-	var map = gameState.getMap();
-
-	var obstructionMask = gameState.getPassabilityClassMask("foundationObstruction");
-	// Only accept valid land tiles (we don't handle docks yet)
-	obstructionMask |= gameState.getPassabilityClassMask("building-land");
-
-	var obstructionTiles = new Uint16Array(map.data.length);
-	for ( var i = 0; i < map.data.length; ++i){
-		obstructionTiles[i] = (map.data[i] & obstructionMask) ? 0 : 65535;
-	}
-
+	var obstructionMap = Map.createObstructionMap(gameState);
 	// Engine.DumpImage("tiles0.png", obstructionTiles, map.width,
 	// map.height, 64);
 
-	this.expandInfluences(obstructionTiles, map.width, map.height);
+	obstructionMap.expandInfluences();
 
 	// Compute each tile's closeness to friendly structures:
 
-	var friendlyTiles = new Uint16Array(map.data.length);
+	var friendlyTiles = new Map(gameState);
 
 	gameState.getOwnEntities().forEach(function(ent) {
 		if (ent.hasClass("Structure")) {
@@ -151,12 +141,12 @@ BuildingConstructionPlan.prototype.findGoodPosition = function(gameState) {
 			var z = Math.round(pos[1] / cellSize);
 			if (template._template.BuildRestrictions.Category === "Field"){
 				if (ent.resourceDropsiteTypes() && ent.resourceDropsiteTypes().indexOf("food") !== -1){
-					self.addInfluence(friendlyTiles, map.width, map.height, x, z, infl);
+					friendlyTiles.addInfluence(x, z, infl);
 				}
 			}else{
-				self.addInfluence(friendlyTiles, map.width, map.height, x, z, infl);
+				friendlyTiles.addInfluence(x, z, infl);
 				if (ent.hasClass("CivCentre")){
-					self.addInfluence(friendlyTiles, map.width, map.height, x, z, infl/8, -4);
+					friendlyTiles.addInfluence(x, z, infl/8, -4);
 				}
 			}
 			
@@ -169,19 +159,10 @@ BuildingConstructionPlan.prototype.findGoodPosition = function(gameState) {
 	var radius = Math.ceil(template.obstructionRadius() / cellSize);
 
 	// Find the best non-obstructed tile
-	var bestIdx = 0;
-	var bestVal = -1;
-	for ( var i = 0; i < map.data.length; ++i) {
-		if (obstructionTiles[i] > radius) {
-			var v = friendlyTiles[i];
-			if (v > bestVal) {
-				bestVal = v;
-				bestIdx = i;
-			}
-		}
-	}
-	var x = ((bestIdx % map.width) + 0.5) * cellSize;
-	var z = (Math.floor(bestIdx / map.width) + 0.5) * cellSize;
+	var bestIdx = friendlyTiles.findBestTile(radius, obstructionMap)[0];
+	
+	var x = ((bestIdx % friendlyTiles.width) + 0.5) * cellSize;
+	var z = (Math.floor(bestIdx / friendlyTiles.width) + 0.5) * cellSize;
 
 	// Engine.DumpImage("tiles1.png", obstructionTiles, map.width,
 	// map.height, 32);

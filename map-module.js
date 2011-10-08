@@ -37,7 +37,11 @@ Map.prototype.addInfluence = function(cx, cy, maxDist, strength) {
 			var dy = y - cy;
 			var r = Math.sqrt(dx * dx + dy * dy);
 			if (r < maxDist){
-				this.map[x + y * this.width] += strength * (maxDist - r);
+				if (-1*(strength*(maxDist - r)) > this.map[x + y * this.width]){
+					this.map[x + y * this.width] = 0;
+				}else{
+					this.map[x + y * this.width] += strength * (maxDist - r);
+				}
 			}
 		}
 	}
@@ -112,4 +116,17 @@ Map.prototype.findBestTile = function(radius, obstructionTiles){
 	}
 	
 	return [bestIdx, bestVal];
+};
+
+// Multiplies current map by the parameter map pixelwise 
+Map.prototype.multiply = function(map){
+	for (var i = 0; i < this.length; i++){
+		this.map[i] *= map.map[i];
+	}
+};
+
+Map.prototype.dumpIm = function(name, threshold){
+	name = name ? name : "default.png";
+	threshold = threshold ? threshold : 256;
+	Engine.DumpImage(name, this.map, this.width, this.height, threshold);
 };

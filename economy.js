@@ -266,12 +266,14 @@ EconomyManager.prototype.updateTreeMap = function(gameState, events){
 		var e = events[i];
 
 		if (e.type === "Destroy") {
-			var ent = new Entity(gameState.ai, e.msg.rawEntity);
-			if (ent && ent.resourceSupplyType() && ent.resourceSupplyType().generic === 'wood'){
-				var x = Math.round(ent.position()[0] / gameState.cellSize);
-				var z = Math.round(ent.position()[1] / gameState.cellSize);
-				
-				this.treeMap.addInfluence(x, z, Math.round(ent.resourceSupplyMax()/decreaseFactor), -1);
+			if (e.msg.rawEntity.template){
+				var ent = new Entity(gameState.ai, e.msg.rawEntity);
+				if (ent && ent.resourceSupplyType() && ent.resourceSupplyType().generic === 'wood'){
+					var x = Math.round(ent.position()[0] / gameState.cellSize);
+					var z = Math.round(ent.position()[1] / gameState.cellSize);
+					
+					this.treeMap.addInfluence(x, z, Math.round(ent.resourceSupplyMax()/decreaseFactor), -1);
+				}
 			}
 		}
 	}

@@ -38,7 +38,7 @@ var MilitaryAttackManager = function() {
 	this.uCivAdvanced.iber = [ "units/{civ}_champion_cavalry", "units/{civ}_champion_infantry" ];
 
 	// buildings
-	this.bModerate = [ "structures/{civ}_barracks" ];
+	this.bModerate = [ "structures/{civ}_barracks" ]; //same for all civs
 
 	this.bCivAdvanced = {};
 	this.bCivAdvanced.hele = [ "structures/{civ}_gymnasion", "structures/{civ}_fortress" ];
@@ -242,10 +242,10 @@ MilitaryAttackManager.prototype.handleEvents = function(gameState, events) {
 			}
 		}
 	}
-	// ({type:"Destroy", msg:{entity:1131}})({type:"Destroy",
-	// msg:{entity:1117}})({type:"Destroy", msg:{entity:1114}})%
 };
 
+// Takes an entity id and returns an entity object or false if there is no entity with that id
+// Also sends a debug message warning if the id has no entity
 MilitaryAttackManager.prototype.entity = function(id) {
 	if (this.gameState.entities._entities[id]) {
 		return new Entity(this.gameState.ai, this.gameState.entities._entities[id]);
@@ -255,14 +255,15 @@ MilitaryAttackManager.prototype.entity = function(id) {
 	return false;
 };
 
+// Returns the number of units in the largest enemy army
 MilitaryAttackManager.prototype.measureEnemyStrength = function(gameState){
-	// Measure enemy strength
+	// Measure enemy strength TODO: make this make a more accurate assesment than number of units
 	var isEnemy = gameState.playerData.isEnemy;
 	var enemyStrength = [];
 	var maxStrength = 0;
+	//loop through every player then look for their soldiers if they are an enemy
 	for ( var i = 1; i < isEnemy.length; i++) {
 		if (isEnemy[i]) {
-			// var enemyEntities = gameState.getEntitiesByPlayer(i);
 			var count = 0;
 			gameState.entities.forEach(function(ent) {
 				if (ent.owner() === i && (ent.hasClass("CitizenSoldier") || ent.hasClass("Super"))) {
@@ -279,6 +280,7 @@ MilitaryAttackManager.prototype.measureEnemyStrength = function(gameState){
 	return maxStrength;
 };
 
+// Adds towers to the defenceBuilding queue
 MilitaryAttackManager.prototype.buildDefences = function(gameState, queues){ 
 	if (gameState.countEntitiesAndQueuedWithType(gameState.applyCiv('structures/{civ}_scout_tower'))
 			+ queues.defenceBuilding.totalLength() < 6) {
@@ -320,7 +322,7 @@ MilitaryAttackManager.prototype.update = function(gameState, queues, events) {
 			queues.militaryBuilding.addItem(new BuildingConstructionPlan(gameState, this.bModerate[0]));
 		}
 	}
-	
+	//build advanced military buildings
 	if (gameState.countEntitiesWithType(gameState.applyCiv("units/{civ}_support_female_citizen")) > 
 			gameState.ai.modules[0].targetNumWorkers * 0.8){
 		if (queues.militaryBuilding.totalLength() === 0){

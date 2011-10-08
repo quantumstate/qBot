@@ -137,7 +137,7 @@ MilitaryAttackManager.prototype.defence = function(gameState) {
 	if (myCivCentres.length === 0)
 		return;
 
-	var defenceRange = 120; // just beyond town centres territory influence
+	var defenceRange = 200; // just beyond town centres territory influence
 	var nearby = [];
 	var defendersPerAttacker = 3;
 

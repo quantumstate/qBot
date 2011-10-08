@@ -258,6 +258,13 @@ EconomyManager.prototype.update = function(gameState, queues) {
 	this.buildMoreFields(gameState, queues);
 	Engine.ProfileStop();
 	
+	//Later in the game we want to build stuff faster.
+	if (gameState.countEntitiesWithType(gameState.applyCiv("units/{civ}_support_female_citizen")) > 50) {
+		this.targetNumBuilders = 10;
+	}else{
+		this.targetNumBuilders = 5;
+	}
+	
 	this.setCount += 1;
 	if (this.setCount >= 20){
 		this.setWorkersIdleByPriority(gameState);

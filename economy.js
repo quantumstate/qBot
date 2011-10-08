@@ -245,7 +245,68 @@ EconomyManager.prototype.buildNewCC= function(gameState, queues) {
 	}
 };
 
-EconomyManager.prototype.update = function(gameState, queues) {
+//creates and maintains a map of tree density
+EconomyManager.prototype.updateTreeMap = function(gameState, events){
+	// if there is no treeMap create one with an influence for everything with wood resource
+	if (! this.treeMap){
+		this.treeMap = new Map(gameState);
+
+		var supplies = gameState.findResourceSupplies();
+		for (i in supplies['wood']){
+			var current = supplies['wood'][i];
+			var x = Math.round(current.position[0] / gameState.cellSize);
+			var y = Math.round(current.position[1] / gameState.cellSize);
+			this.treeMap.addInfluence(x, y, Math.round(current.entity.resourceSupplyMax()/10));
+		}
+	}
+	// Look for destroy events and subtract the entities original influence from the treeMap
+	for (i in events) {
+		var e = events[i];
+
+		if (e.type === "Destroy") {
+			var ent = new Entity(gameState.ai, e.msg.rawEntity);
+			if (ent && ent.resourceSupplyType() && ent.resourceSupplyType().generic === 'wood'){
+				var x = Math.round(ent.position()[0] / gameState.cellSize);
+				var y = Math.round(ent.position()[1] / gameState.cellSize);
+				
+				this.treeMap.addInfluence(x, y, Math.round(ent.resourceSupplyMax()/10), -1);
+			}
+		}
+	}
+	
+	//this.treeMap.dumpIm("tree_density.png");
+};
+
+EconomyManager.prototype.getBestForestBuildSpot = function(gameState){
+	
+	var friendlyTiles = new Map(gameState);
+	gameState.getOwnEntities().forEach(function(ent) {
+		if (ent.hasClass("CivCentre")){
+			var infl = 75;
+
+			var pos = ent.position();
+			var x = Math.round(pos[0] / gameState.cellSize);
+			var z = Math.round(pos[1] / gameState.cellSize);
+			friendlyTiles.addInfluence(x, z, infl, 0.4);
+		}
+	});
+	
+	friendlyTiles.multiply(this.treeMap);
+	
+	friendlyTiles.dumpIm("tree_density_fade.png", 10000);
+	
+	var obstructions = Map.createObstructionMap(gameState);
+	obstructions.expandInfluences();
+	
+	var bestIdx = friendlyTiles.findBestTile(0, obstructions)[0];
+	
+	var x = ((bestIdx % friendlyTiles.width) + 0.5) * gameState.cellSize;
+	var y = (Math.floor(bestIdx / friendlyTiles.width) + 0.5) * gameState.cellSize;
+	
+	return [x,y];
+};
+
+EconomyManager.prototype.update = function(gameState, queues, events) {
 	Engine.ProfileStart("economy update");
 	
 	this.reassignRolelessUnits(gameState);
@@ -264,6 +325,10 @@ EconomyManager.prototype.update = function(gameState, queues) {
 	}else{
 		this.targetNumBuilders = 5;
 	}
+	
+	Engine.ProfileStart("Update Tree Map");
+	this.updateTreeMap(gameState, events);
+	Engine.ProfileStop();
 	
 	this.setCount += 1;
 	if (this.setCount >= 20){

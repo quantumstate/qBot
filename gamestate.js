@@ -72,15 +72,30 @@ GameState.prototype.isPlayerEnemy = function(id) {
 };
 
 GameState.prototype.isEntityAlly = function(ent) {
-	return (ent && ent.owner !== undefined && this.playerData.isAlly[ent.owner()]);
+	if (ent && ent.owner && (typeof ent.owner) === "function"){
+		return this.playerData.isAlly[ent.owner()];
+	} else if (ent && ent.owner){
+		return this.playerData.isAlly[ent.owner]
+	}
+	return false;
 };
 
 GameState.prototype.isEntityEnemy = function(ent) {
-	return (ent && ent.owner !== undefined && this.playerData.isEnemy[ent.owner()]);
+	if (ent && ent.owner && (typeof ent.owner) === "function"){
+		return this.playerData.isEnemy[ent.owner()];
+	} else if (ent && ent.owner){
+		return this.playerData.isEnemy[ent.owner]
+	}
+	return false;
 };
  
 GameState.prototype.isEntityOwn = function(ent) {
-	return (ent && ent.owner !== undefined && ent.owner() == this.player);
+	if (ent && ent.owner && (typeof ent.owner) === "function"){
+		return ent.owner() == this.player;
+	} else if (ent && ent.owner){
+		return ent.owner == this.player
+	}
+	return false;
 };
 
 GameState.prototype.getOwnEntities = (function() {

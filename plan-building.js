@@ -1,5 +1,6 @@
-var BuildingConstructionPlan = function(gameState, type) {
+var BuildingConstructionPlan = function(gameState, type, position) {
 	this.type = gameState.applyCiv(type);
+	this.position = position;
 
 	var template = gameState.getTemplate(this.type);
 	if (!template) {
@@ -114,7 +115,6 @@ BuildingConstructionPlan.prototype.addInfluence = function(grid, w, h, cx, cy, m
 
 BuildingConstructionPlan.prototype.findGoodPosition = function(gameState) {
 	var template = gameState.getTemplate(this.type);
-	var self = this;
 
 	var cellSize = 4; // size of each tile
 
@@ -129,30 +129,37 @@ BuildingConstructionPlan.prototype.findGoodPosition = function(gameState) {
 	// Compute each tile's closeness to friendly structures:
 
 	var friendlyTiles = new Map(gameState);
-
-	gameState.getOwnEntities().forEach(function(ent) {
-		if (ent.hasClass("Structure")) {
-			var infl = 32;
-			if (ent.hasClass("CivCentre"))
-				infl *= 4;
-
-			var pos = ent.position();
-			var x = Math.round(pos[0] / cellSize);
-			var z = Math.round(pos[1] / cellSize);
-			if (template._template.BuildRestrictions.Category === "Field"){
-				if (ent.resourceDropsiteTypes() && ent.resourceDropsiteTypes().indexOf("food") !== -1){
+	
+	if (this.position){
+		var x = Math.round(this.position[0] / cellSize);
+		var z = Math.round(this.position[1] / cellSize);
+		friendlyTiles.addInfluence(x, z, 200);
+		friendlyTiles.dumpIm("pos.png",	200);
+	}else{			
+		gameState.getOwnEntities().forEach(function(ent) {
+			if (ent.hasClass("Structure")) {
+				var infl = 32;
+				if (ent.hasClass("CivCentre"))
+					infl *= 4;
+	
+				var pos = ent.position();
+				var x = Math.round(pos[0] / cellSize);
+				var z = Math.round(pos[1] / cellSize);
+				if (template._template.BuildRestrictions.Category === "Field"){
+					if (ent.resourceDropsiteTypes() && ent.resourceDropsiteTypes().indexOf("food") !== -1){
+						friendlyTiles.addInfluence(x, z, infl);
+					}
+				}else{
 					friendlyTiles.addInfluence(x, z, infl);
+					if (ent.hasClass("CivCentre")){
+						friendlyTiles.addInfluence(x, z, infl/8, -4);
+					}
 				}
-			}else{
-				friendlyTiles.addInfluence(x, z, infl);
-				if (ent.hasClass("CivCentre")){
-					friendlyTiles.addInfluence(x, z, infl/8, -4);
-				}
-			}
-			
 				
-		}
-	});
+					
+			}
+		});
+	}
 
 	// Find target building's approximate obstruction radius,
 	// and expand by a bit to make sure we're not too close

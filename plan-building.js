@@ -116,7 +116,7 @@ BuildingConstructionPlan.prototype.addInfluence = function(grid, w, h, cx, cy, m
 BuildingConstructionPlan.prototype.findGoodPosition = function(gameState) {
 	var template = gameState.getTemplate(this.type);
 
-	var cellSize = 4; // size of each tile
+	var cellSize = gameState.cellSize; // size of each tile
 
 	// First, find all tiles that are far enough away from obstructions:
 

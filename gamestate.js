@@ -11,6 +11,8 @@ var GameState = function(ai) {
 	this.entities = ai.entities;
 	this.playerData = ai.playerData;
 	this.buildingsBuilt = 0;
+	
+	this.cellSize = 4; // Size of each map tile
 };
 
 GameState.prototype.getTimeElapsed = function() {

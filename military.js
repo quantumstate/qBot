@@ -101,8 +101,7 @@ MilitaryAttackManager.prototype.findBestNewUnit = function(gameState, queues) {
 		return a[1] - b[1];
 	});
 
-	// TODO: we shouldn't return units that we don't have any
-	// buildings capable of training
+	// TODO: Need to check that there is at least one training building
 
 	return types[0][0];
 };

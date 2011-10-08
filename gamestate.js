@@ -9,6 +9,7 @@ var GameState = function(ai) {
 	this.timeElapsed = ai.timeElapsed;
 	this.templates = ai.templates;
 	this.entities = ai.entities;
+	this.player = ai.player;
 	this.playerData = ai.playerData;
 	this.buildingsBuilt = 0;
 	
@@ -56,6 +57,30 @@ GameState.prototype.getPassabilityClassMask = function(name) {
 	if (!(name in this.ai.passabilityClasses))
 		error("Tried to use invalid passability class name '" + name + "'");
 	return this.ai.passabilityClasses[name];
+};
+
+GameState.prototype.getPlayerID = function() {
+	return this.player;
+};
+
+GameState.prototype.isPlayerAlly = function(id) {
+	return this.playerData.isAlly[id];
+};
+
+GameState.prototype.isPlayerEnemy = function(id) {
+	return this.playerData.isEnemy[id];
+};
+
+GameState.prototype.isEntityAlly = function(ent) {
+	return (ent && ent.owner !== undefined && this.playerData.isAlly[ent.owner()]);
+};
+
+GameState.prototype.isEntityEnemy = function(ent) {
+	return (ent && ent.owner !== undefined && this.playerData.isEnemy[ent.owner()]);
+};
+ 
+GameState.prototype.isEntityOwn = function(ent) {
+	return (ent && ent.owner !== undefined && ent.owner() == this.player);
 };
 
 GameState.prototype.getOwnEntities = (function() {

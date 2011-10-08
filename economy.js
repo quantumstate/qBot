@@ -248,6 +248,8 @@ EconomyManager.prototype.buildNewCC= function(gameState, queues) {
 //creates and maintains a map of tree density
 EconomyManager.prototype.updateTreeMap = function(gameState, events){
 	// if there is no treeMap create one with an influence for everything with wood resource
+	var decreaseFactor = 15;
+	
 	if (! this.treeMap){
 		this.treeMap = new Map(gameState);
 
@@ -255,8 +257,8 @@ EconomyManager.prototype.updateTreeMap = function(gameState, events){
 		for (i in supplies['wood']){
 			var current = supplies['wood'][i];
 			var x = Math.round(current.position[0] / gameState.cellSize);
-			var y = Math.round(current.position[1] / gameState.cellSize);
-			this.treeMap.addInfluence(x, y, Math.round(current.entity.resourceSupplyMax()/10));
+			var z = Math.round(current.position[1] / gameState.cellSize);
+			this.treeMap.addInfluence(x, z, Math.round(current.entity.resourceSupplyMax()/decreaseFactor));
 		}
 	}
 	// Look for destroy events and subtract the entities original influence from the treeMap
@@ -267,14 +269,14 @@ EconomyManager.prototype.updateTreeMap = function(gameState, events){
 			var ent = new Entity(gameState.ai, e.msg.rawEntity);
 			if (ent && ent.resourceSupplyType() && ent.resourceSupplyType().generic === 'wood'){
 				var x = Math.round(ent.position()[0] / gameState.cellSize);
-				var y = Math.round(ent.position()[1] / gameState.cellSize);
+				var z = Math.round(ent.position()[1] / gameState.cellSize);
 				
-				this.treeMap.addInfluence(x, y, Math.round(ent.resourceSupplyMax()/10), -1);
+				this.treeMap.addInfluence(x, z, Math.round(ent.resourceSupplyMax()/decreaseFactor), -1);
 			}
 		}
 	}
 	
-	//this.treeMap.dumpIm("tree_density.png");
+	this.treeMap.dumpIm("tree_density.png");
 };
 
 EconomyManager.prototype.getBestForestBuildSpot = function(gameState){
@@ -282,12 +284,21 @@ EconomyManager.prototype.getBestForestBuildSpot = function(gameState){
 	var friendlyTiles = new Map(gameState);
 	gameState.getOwnEntities().forEach(function(ent) {
 		if (ent.hasClass("CivCentre")){
-			var infl = 75;
+			var infl = 90;
 
 			var pos = ent.position();
 			var x = Math.round(pos[0] / gameState.cellSize);
 			var z = Math.round(pos[1] / gameState.cellSize);
-			friendlyTiles.addInfluence(x, z, infl, 0.4);
+			friendlyTiles.addInfluence(x, z, infl, 0.3);
+		}
+		if (ent.resourceDropsiteTypes() && ent.resourceDropsiteTypes().indexOf("wood") !== -1){
+			var infl = 20;
+			
+			var pos = ent.position();
+			var x = Math.round(pos[0] / gameState.cellSize);
+			var z = Math.round(pos[1] / gameState.cellSize);
+			
+			friendlyTiles.addInfluence(x, z, infl, -100);
 		}
 	});
 	
@@ -298,12 +309,12 @@ EconomyManager.prototype.getBestForestBuildSpot = function(gameState){
 	var obstructions = Map.createObstructionMap(gameState);
 	obstructions.expandInfluences();
 	
-	var bestIdx = friendlyTiles.findBestTile(0, obstructions)[0];
+	var bestIdx = friendlyTiles.findBestTile(4, obstructions)[0];
 	
 	var x = ((bestIdx % friendlyTiles.width) + 0.5) * gameState.cellSize;
-	var y = (Math.floor(bestIdx / friendlyTiles.width) + 0.5) * gameState.cellSize;
+	var z = (Math.floor(bestIdx / friendlyTiles.width) + 0.5) * gameState.cellSize;
 	
-	return [x,y];
+	return [x,z];
 };
 
 EconomyManager.prototype.update = function(gameState, queues, events) {
@@ -329,6 +340,24 @@ EconomyManager.prototype.update = function(gameState, queues, events) {
 	Engine.ProfileStart("Update Tree Map");
 	this.updateTreeMap(gameState, events);
 	Engine.ProfileStop();
+	
+	if (gameState.getTimeElapsed() > 30 * 1000){
+		var numMills = gameState.countEntitiesAndQueuedWithType(gameState.applyCiv("structures/{civ}_mill"));
+		numMills += queues.economicBuilding.totalLength();
+		if (numMills < 1){
+			var spot = this.getBestForestBuildSpot(gameState);
+			queues.economicBuilding.addItem(new BuildingConstructionPlan(gameState, "structures/{civ}_mill", spot));
+		}
+	}
+	
+	if (gameState.getTimeElapsed() > 300 * 1000){
+		var numMills = gameState.countEntitiesAndQueuedWithType(gameState.applyCiv("structures/{civ}_mill"));
+		numMills += queues.economicBuilding.totalLength();
+		if (numMills < 2){
+			var spot = this.getBestForestBuildSpot(gameState);
+			queues.economicBuilding.addItem(new BuildingConstructionPlan(gameState, "structures/{civ}_mill", spot));
+		}
+	}
 	
 	this.setCount += 1;
 	if (this.setCount >= 20){

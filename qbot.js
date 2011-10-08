@@ -53,7 +53,7 @@ QBotAI.prototype.runInit = function(gameState){
 
 QBotAI.prototype.OnUpdate = function() {
 	if (this.gameFinished){
-		returnl
+		return;
 	}
 	if (this.events.length > 0){
 		this.savedEvents = this.savedEvents.concat(this.events);

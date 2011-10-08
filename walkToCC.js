@@ -6,7 +6,7 @@ var WalkToCC = function(){
 WalkToCC.prototype.execute = function(gameState, militaryManager){
 	var maxStrength = militaryManager.measureEnemyStrength(gameState);
 	
-	this.targetSquadSize = maxStrength * 2;
+	this.targetSquadSize = maxStrength * 1.5;
 	
 	// Find the units ready to join the attack
 	var availableCount = militaryManager.countAvailableUnits();
@@ -22,13 +22,13 @@ WalkToCC.prototype.execute = function(gameState, militaryManager){
 		
 		// Find the enemy CCs we could attack
 		var targets = gameState.entities.filter(function(ent) {
-			return (ent.isEnemy() && ent.hasClass("CivCentre"));
+			return (gameState.isEntityEnemy(ent) && ent.hasClass("CivCentre"));
 		});
 
 		// If there's no CCs, attack anything else that's critical
 		if (targets.length == 0) {
 			targets = gameState.entities.filter(function(ent) {
-				return (ent.isEnemy() && ent.hasClass("ConquestCritical"));
+				return (gameState.isEntityEnemy(ent) && ent.hasClass("ConquestCritical"));
 			});
 		}
 
@@ -44,6 +44,8 @@ WalkToCC.prototype.execute = function(gameState, militaryManager){
 
 			// TODO: this should be an attack-move command
 			pending.move(targetPos[0], targetPos[1]);
+		} else if (targets.length == 0 ) {
+			gameState.ai.gameFinished = true;
 		}
 	}
 };

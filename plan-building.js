@@ -92,7 +92,7 @@ BuildingConstructionPlan.prototype.findGoodPosition = function(gameState) {
 
 	// Find target building's approximate obstruction radius,
 	// and expand by a bit to make sure we're not too close
-	var radius = Math.ceil(template.obstructionRadius() / cellSize);
+	var radius = Math.ceil(template.obstructionRadius() / cellSize) + 2;
 
 	// Find the best non-obstructed tile
 	var bestIdx = friendlyTiles.findBestTile(radius, obstructionMap)[0];

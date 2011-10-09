@@ -208,6 +208,20 @@ MilitaryAttackManager.prototype.getAvailableUnits = function(n) {
 	return ret;
 };
 
+// Takes a single unit id, and marks it unassigned
+MilitaryAttackManager.prototype.unassignUnit = function(unit){
+	this.unassigned[unit] = true;
+	this.assigned[unit] = false;
+};
+
+// Takes an array of unit id's and marks all of them unassigned 
+MilitaryAttackManager.prototype.unassignUnits = function(units){
+	for (i in units){
+		this.unassigned[unit[i]] = true;
+		this.assigned[unit[i]] = false;
+	}
+};
+
 MilitaryAttackManager.prototype.countAvailableUnits = function(){
 	var count = 0;
 	for (i in this.unassigned){
@@ -241,8 +255,7 @@ MilitaryAttackManager.prototype.handleEvents = function(gameState, events) {
 					var attacker = this.entity(metadata.attackers[i]);
 					if (attacker){
 						attacker.deleteMetadata('attacking');
-						this.unassigned[attacker.id()] = true;
-						this.assigned[attacker.id()] = false;
+						this.unassignUnit(attacker.id());
 					}
 				}
 			}

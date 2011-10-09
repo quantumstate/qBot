@@ -274,12 +274,76 @@ MilitaryAttackManager.prototype.entity = function(id) {
 	return false;
 };
 
+// Returns the military strength of unit 
+MilitaryAttackManager.prototype.getUnitStrength = function(ent){
+	var strength = 0.0;
+	var attackStrength = ent.attackStrengths();
+	var armorStrength = ent.armorStrengths();
+	for (var type in attackStrength) {
+		for (var str in attackStrength[type]) {
+			var val = parseFloat(attackStrength[type][str]);
+			switch (str) {
+				case "Crush":
+					strength += (val * 0.085) / 3;
+					break;
+				case "Hack":
+					strength += (val * 0.075) / 3;
+					break;
+				case "Pierce":
+					strength += (val * 0.065) / 3;
+					break;
+				case "MaxRange":
+					strength += (val * 0.0125) ;
+					break;
+				case "MinRange":
+					strength -= (val * 0.0125) ;
+					break;
+				case "RepeatTime":
+					strength += (val / 100000);
+					break;
+				case "PrepareTime":
+					strength -= (val / 100000);
+					break;
+				case "ProjectileSpeed":
+					strength += (val / 1000);
+					break;
+			}
+		}
+	}
+	for (var str in armorStrength) {
+		var val = parseFloat(armorStrength[str]);
+		switch (str) {
+			case "Crush":
+				strength += (val * 0.085) / 3;
+				break;
+			case "Hack":
+				strength += (val * 0.075) / 3;
+				break;
+			case "Pierce":
+				strength += (val * 0.065) / 3;
+				break;
+		}
+	}
+	return strength;
+};
+
+// Returns the  strength of the available units of ai army
+MilitaryAttackManager.prototype.measureAvailableStrength = function(){
+	var  strength = 0.0;
+	for (i in this.unassigned){
+		if (this.unassigned[i]){
+			strength+=this.getUnitStrength(this.entity(i));
+		}
+	}
+	return strength;
+};
+
 // Returns the number of units in the largest enemy army
-MilitaryAttackManager.prototype.measureEnemyStrength = function(gameState){
-	// Measure enemy strength TODO: make this make a more accurate assessment than number of units
+MilitaryAttackManager.prototype.measureEnemyCount = function(gameState){
+	// Measure enemy units
 	var isEnemy = gameState.playerData.isEnemy;
-	var enemyStrength = [];
-	var maxStrength = 0;
+	var enemyCount = [];
+	var maxCount = 0;
 	//loop through every player then look for their soldiers if they are an enemy
 	for ( var i = 1; i < isEnemy.length; i++) {
 		if (isEnemy[i]) {
@@ -289,9 +353,35 @@ MilitaryAttackManager.prototype.measureEnemyStrength = function(gameState){
 					count++;
 				}
 			});
-			enemyStrength[i] = count;
-			if (count > maxStrength) {
-				maxStrength = count;
+			enemyCount[i] = count;
+			if (count > maxCount) {
+				maxCount = count;
+			}
+		}
+	}
+	
+	return maxCount;
+};
+
+// Returns the strength of the largest enemy army
+MilitaryAttackManager.prototype.measureEnemyStrength = function(gameState){
+	// Measure enemy strength
+	var isEnemy = gameState.playerData.isEnemy;
+	var enemyStrength = [];
+	var maxStrength = 0;
+	var self = this;
+	//loop through every player then look for their soldiers if they are an enemy
+	for ( var i = 1; i < isEnemy.length; i++) {
+		if (isEnemy[i]) {
+			var strength = 0.0;
+			gameState.entities.forEach(function(ent) {
+				if (ent.owner() === i && (ent.hasClass("CitizenSoldier") || ent.hasClass("Super"))) {
+					strength+=self.getUnitStrength(ent);
+				}
+			});
+			enemyStrength[i] = strength;
+			if (strength > maxStrength) {
+				maxStrength = strength;
 			}
 		}
 	}

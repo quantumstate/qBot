@@ -263,7 +263,7 @@ MilitaryAttackManager.prototype.entity = function(id) {
 
 // Returns the number of units in the largest enemy army
 MilitaryAttackManager.prototype.measureEnemyStrength = function(gameState){
-	// Measure enemy strength TODO: make this make a more accurate assesment than number of units
+	// Measure enemy strength TODO: make this make a more accurate assessment than number of units
 	var isEnemy = gameState.playerData.isEnemy;
 	var enemyStrength = [];
 	var maxStrength = 0;

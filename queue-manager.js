@@ -243,9 +243,7 @@ QueueManager.prototype.update = function(gameState) {
 		this.affordableToOutQueue(gameState);
 	} while (this.curItemQueue.length === 0)
 
-	// Handle output queues
-	// TODO: Handle multiple units in queue for faster training times -
-	// partially done, need to hold queue before sending to a building
+	// Handle output queues by executing items where possible
 	for (p in this.queues) {
 		while (this.queues[p].outQueueLength() > 0) {
 			var next = this.queues[p].outQueueNext();

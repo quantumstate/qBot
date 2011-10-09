@@ -75,7 +75,7 @@ GameState.prototype.isEntityAlly = function(ent) {
 	if (ent && ent.owner && (typeof ent.owner) === "function"){
 		return this.playerData.isAlly[ent.owner()];
 	} else if (ent && ent.owner){
-		return this.playerData.isAlly[ent.owner]
+		return this.playerData.isAlly[ent.owner];
 	}
 	return false;
 };
@@ -84,7 +84,7 @@ GameState.prototype.isEntityEnemy = function(ent) {
 	if (ent && ent.owner && (typeof ent.owner) === "function"){
 		return this.playerData.isEnemy[ent.owner()];
 	} else if (ent && ent.owner){
-		return this.playerData.isEnemy[ent.owner]
+		return this.playerData.isEnemy[ent.owner];
 	}
 	return false;
 };
@@ -93,7 +93,7 @@ GameState.prototype.isEntityOwn = function(ent) {
 	if (ent && ent.owner && (typeof ent.owner) === "function"){
 		return ent.owner() == this.player;
 	} else if (ent && ent.owner){
-		return ent.owner == this.player
+		return ent.owner == this.player;
 	}
 	return false;
 };

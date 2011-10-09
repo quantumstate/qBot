@@ -173,7 +173,7 @@ GameState.prototype.countEntitiesAndQueuedWithRole = function(role) {
  * already too busy.
  */
 GameState.prototype.findTrainers = function(template) {
-	var maxQueueLength = 3; // avoid tying up resources in giant training
+	var maxQueueLength = 2; // avoid tying up resources in giant training
 	// queues
 
 	return this.getOwnEntities().filter(function(ent) {

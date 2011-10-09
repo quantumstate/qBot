@@ -22,13 +22,13 @@ WalkToCC.prototype.execute = function(gameState, militaryManager){
 		
 		// Find the enemy CCs we could attack
 		var targets = gameState.entities.filter(function(ent) {
-			return (gameState.isEntityEnemy(ent) && ent.hasClass("CivCentre"));
+			return (gameState.isEntityEnemy(ent) && ent.hasClass("CivCentre") && ent.owner() !== 0);
 		});
 
 		// If there's no CCs, attack anything else that's critical
 		if (targets.length == 0) {
 			targets = gameState.entities.filter(function(ent) {
-				return (gameState.isEntityEnemy(ent) && ent.hasClass("ConquestCritical"));
+				return (gameState.isEntityEnemy(ent) && ent.hasClass("ConquestCritical") && ent.owner() !== 0);
 			});
 		}
 

@@ -177,7 +177,7 @@ BuildingConstructionPlan.prototype.findGoodPosition = function(gameState) {
 	// 256);
 
 	// default angle
-	var angle = Math.PI/4;
+	var angle = 3*Math.PI/4;
 
 	return {
 		"x" : x,

@@ -18,24 +18,25 @@ var MilitaryAttackManager = function() {
 	// this.enemyAttackers = {};
 
 	// units
-	this.uCivBasic = {};
-	this.uCivModerate = {};
+	this.uCivCitizenSoldier= {};
 	this.uCivAdvanced = {};
-	this.uCivBasic.hele = [ "units/{civ}_infantry_spearman_b", "units/{civ}_infantry_javelinist_b",	"units/{civ}_cavalry_swordsman_b" ];
-	this.uCivModerate.hele = [ "units/{civ}_cavalry_javelinist_b", "units/{civ}_infantry_archer_b" ];
-	this.uCivAdvanced.hele = [ "units/{civ}_champion_cavalry_mace", "units/{civ}_champion_infantry_mace", "units/{civ}_champion_infantry_polis", "units/{civ}_champion_ranged_polis" ];
+	this.uCivSiege = {};
+	
+	this.uCivCitizenSoldier.hele = [ "units/hele_infantry_spearman_b", "units/hele_infantry_javelinist_b", "units/hele_infantry_archer_b" ];
+	this.uCivAdvanced.hele = [ "units/hele_cavalry_swordsman_b", "units/hele_cavalry_javelinist_b", "units/hele_champion_cavalry_mace", "units/hele_champion_infantry_mace", "units/hele_champion_infantry_polis", "units/hele_champion_ranged_polis" , "units/thebes_sacred_band_hoplitai", "units/thespian_melanochitones","units/sparta_hellenistic_phalangitai", "units/thrace_black_cloak"];
+	this.uCivSiege.hele = [ "units/hele_mechanical_siege_oxybeles", "units/hele_mechanical_siege_lithobolos" ];
 
-	this.uCivBasic.cart = [ "units/{civ}_infantry_spearman_b", "units/{civ}_infantry_archer_b", "units/{civ}_cavalry_javelinist_b" ];
-	this.uCivModerate.cart = [];
-	this.uCivAdvanced.cart = [ "units/{civ}_champion_cavalry", "units/{civ}_infantry_swordsman_2_b", "units/{civ}_cavalry_spearman_b", "units/{civ}_infantry_javelinist_b", "units/{civ}_infantry_slinger_b", "units/{civ}_cavalry_swordsman_b", "units/{civ}_infantry_swordsman_b", "units/{civ}_cavalry_swordsman_2_b" ];
+	this.uCivCitizenSoldier.cart = [ "units/cart_infantry_spearman_b", "units/cart_infantry_archer_b" ];
+	this.uCivAdvanced.cart = [ "units/cart_cavalry_javelinist_b", "units/cart_champion_cavalry", "units/cart_infantry_swordsman_2_b", "units/cart_cavalry_spearman_b", "units/cart_infantry_javelinist_b", "units/cart_infantry_slinger_b", "units/cart_cavalry_swordsman_b", "units/cart_infantry_swordsman_b", "units/cart_cavalry_swordsman_2_b", "units/cart_sacred_band_cavalry"];
+	this.uCivSiege.cart = ["units/cart_mechanical_siege_ballista", "units/cart_mechanical_siege_oxybeles"];
+	
+	this.uCivCitizenSoldier.celt = [ "units/celt_infantry_spearman_b", "units/celt_infantry_javelinist_b" ];
+	this.uCivAdvanced.celt = [ "units/celt_cavalry_javelinist_b", "units/celt_cavalry_swordsman_b", "units/celt_champion_cavalry_gaul", "units/celt_champion_infantry_gaul", "units/celt_champion_cavalry_brit", "units/celt_champion_infantry_brit", "units/celt_fanatic" ];
+	this.uCivSiege.celt = ["units/celt_mechanical_siege_ram"];
 
-	this.uCivBasic.celt = [ "units/{civ}_infantry_spearman_b", "units/{civ}_infantry_javelinist_b", "units/{civ}_cavalry_javelinist_b" ];
-	this.uCivModerate.celt = [ "units/{civ}_cavalry_swordsman_b" ];
-	this.uCivAdvanced.celt = [ "units/{civ}_champion_cavalry_gaul", "units/{civ}_champion_infantry_gaul", "units/{civ}_champion_cavalry_brit", "units/{civ}_champion_infantry_brit" ];
-
-	this.uCivBasic.iber = [ "units/{civ}_infantry_swordsman_b", "units/{civ}_infantry_javelinist_b", "units/{civ}_cavalry_spearman_b" ];
-	this.uCivModerate.iber = [ "units/{civ}_infantry_spearman_b", "units/{civ}_infantry_slinger_b" ];
-	this.uCivAdvanced.iber = [ "units/{civ}_champion_cavalry", "units/{civ}_champion_infantry" ];
+	this.uCivCitizenSoldier.iber = [ "units/iber_infantry_spearman_b", "units/iber_infantry_slinger_b", "units/iber_infantry_swordsman_b", "units/iber_infantry_javelinist_b" ];
+	this.uCivAdvanced.iber = ["units/iber_cavalry_spearman_b", "units/iber_champion_cavalry", "units/iber_champion_infantry" ];
+	this.uCivSiege.iber = ["units/iber_mechanical_siege_ram"];
 
 	// buildings
 	this.bModerate = [ "structures/{civ}_barracks" ]; //same for all civs
@@ -51,10 +52,10 @@ var MilitaryAttackManager = function() {
 
 MilitaryAttackManager.prototype.init = function(gameState) {
 	var civ = gameState.playerData.civ;
-	if (civ in this.uCivBasic) {
-		this.uBasic = this.uCivBasic[civ];
-		this.uModerate = this.uCivModerate[civ];
+	if (civ in this.uCivCitizenSoldier) {
+		this.uCitizenSoldier = this.uCivCitizenSoldier[civ];
 		this.uAdvanced = this.uCivAdvanced[civ];
+		this.uSiege = this.uCivSiege[civ];
 
 		this.bAdvanced = this.bCivAdvanced[civ];
 	}
@@ -65,17 +66,22 @@ MilitaryAttackManager.prototype.init = function(gameState) {
  * @param (GameState) gameState
  * @returns array of soldiers for which training buildings exist
  */
-MilitaryAttackManager.prototype.findTrainableUnits = function(gameState){
+MilitaryAttackManager.prototype.findTrainableUnits = function(gameState, soldierTypes){
 	var ret = [];
 	gameState.getOwnEntities().forEach(function(ent) {
 		var trainable = ent.trainableEntities();
 		for (i in trainable){
-			var template = new EntityTemplate(gameState.ai.GetTemplate(trainable[i]));
-			if (template.hasClass("CitizenSoldier") || template.hasClass("Super")){
+			//var template = new EntityTemplate(gameState.ai.GetTemplate(trainable[i]));
+			if (soldierTypes.indexOf(trainable[i]) !== -1){
 				if (ret.indexOf(trainable[i]) === -1){
 					ret.push(trainable[i]);
 				}
-			}
+			} 
+			/*if (template.hasClass("CitizenSoldier") || template.hasClass("Super")){
+				if (ret.indexOf(trainable[i]) === -1){
+					ret.push(trainable[i]);
+				}
+			}*/
 		}
 		return true;
 	});
@@ -86,14 +92,14 @@ MilitaryAttackManager.prototype.findTrainableUnits = function(gameState){
  * Returns the unit type we should begin training. (Currently this is whatever
  * we have least of.)
  */
-MilitaryAttackManager.prototype.findBestNewUnit = function(gameState, queues) {
-	var units = this.findTrainableUnits(gameState);
+MilitaryAttackManager.prototype.findBestNewUnit = function(gameState, queue, soldierTypes) {
+	var units = this.findTrainableUnits(gameState, soldierTypes);
 	// Count each type
 	var types = [];
 	for ( var tKey in units) {
 		var t = units[tKey];
 		types.push([t, gameState.countEntitiesAndQueuedWithType(gameState.applyCiv(t))
-						+ queues.militaryUnit.countAllByType(gameState.applyCiv(t)) ]);
+						+ queue.countAllByType(gameState.applyCiv(t)) ]);
 	}
 
 	// Sort by increasing count
@@ -101,8 +107,9 @@ MilitaryAttackManager.prototype.findBestNewUnit = function(gameState, queues) {
 		return a[1] - b[1];
 	});
 
-	// TODO: Need to check that there is at least one training building
-
+	if (types.length === 0){
+		return false;
+	}
 	return types[0][0];
 };
 
@@ -307,10 +314,29 @@ MilitaryAttackManager.prototype.update = function(gameState, queues, events) {
 	this.buildDefences(gameState, queues);
 
 	// Continually try training new units, in batches of 5
-	if (queues.militaryUnit.length() < 6) {
-		queues.militaryUnit.addItem(new UnitTrainingPlan(gameState, this.findBestNewUnit(gameState, queues), {
-			"role" : "soldier"
-		}, 5));
+	if (queues.citizenSoldier.length() < 6) {
+		var newUnit = this.findBestNewUnit(gameState, queues.citizenSoldier, this.uCitizenSoldier);
+		if (newUnit){
+			queues.citizenSoldier.addItem(new UnitTrainingPlan(gameState, newUnit, {
+				"role" : "soldier"
+			}, 5));
+		}
+	}
+	if (queues.advancedSoldier.length() < 2) {
+		var newUnit = this.findBestNewUnit(gameState, queues.advancedSoldier, this.uAdvanced);
+		if (newUnit){
+			queues.advancedSoldier.addItem(new UnitTrainingPlan(gameState, newUnit, {
+				"role" : "soldier"
+			}, 5));
+		}
+	}
+	if (queues.siege.length() < 4) {
+		var newUnit = this.findBestNewUnit(gameState, queues.siege, this.uSiege);
+		if (newUnit){
+			queues.siege.addItem(new UnitTrainingPlan(gameState, newUnit, {
+				"role" : "soldier"
+			}, 2));
+		}
 	}
 
 	// Build more military buildings
@@ -331,7 +357,6 @@ MilitaryAttackManager.prototype.update = function(gameState, queues, events) {
 				}
 			}
 		}
-		
 	}
 	
 	this.attackManager.execute(gameState, this);

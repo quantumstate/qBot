@@ -9,10 +9,12 @@ function QBotAI(settings) {
 	// this.queues cannot be modified past initialisation or queue-manager will break
 	this.queues = {
 		house : new Queue(),
-		militaryUnit : new Queue(),
+		citizenSoldier : new Queue(),
 		villager : new Queue(),
 		economicBuilding : new Queue(),
 		field : new Queue(),
+		advancedSoldier : new Queue(),
+		siege : new Queue(),
 		militaryBuilding : new Queue(),
 		defenceBuilding : new Queue(),
 		civilCentre: new Queue()
@@ -22,10 +24,12 @@ function QBotAI(settings) {
 	
 	var priorities = {
 		house : 100,
-		militaryUnit : 100,
+		citizenSoldier : 100,
 		villager : 100,
 		economicBuilding : 30,
 		field: 4,
+		advancedSoldier : 30,
+		siege : 10,
 		militaryBuilding : 30,
 		defenceBuilding: 5,
 		civilCentre: 1000

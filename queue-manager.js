@@ -75,10 +75,11 @@ QueueManager.prototype.futureNeeds = function(gameState) {
 		queues.push(q);
 	}
 	var needs = recurse(queues, this, futureNum, 0);
+	// Return predicted values minus the current stockpiles along with a base rater for all resources
 	return {
 		"food" : Math.max(needs.food - current.food, 0) + 150,
 		"wood" : Math.max(needs.wood + 15*needs.population - current.wood, 0) + 150, //TODO: read the house cost in case it changes in the future
-		"stone" : Math.max(needs.stone - current.stone, 0) + 100,
+		"stone" : Math.max(needs.stone - current.stone, 0) + 50,
 		"metal" : Math.max(needs.metal - current.metal, 0) + 100
 	};
 };

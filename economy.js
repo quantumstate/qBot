@@ -278,7 +278,7 @@ EconomyManager.prototype.updateTreeMap = function(gameState, events){
 		}
 	}
 	
-	this.treeMap.dumpIm("tree_density.png");
+	//this.treeMap.dumpIm("tree_density.png");
 };
 
 EconomyManager.prototype.getBestForestBuildSpot = function(gameState){
@@ -306,7 +306,7 @@ EconomyManager.prototype.getBestForestBuildSpot = function(gameState){
 	
 	friendlyTiles.multiply(this.treeMap);
 	
-	friendlyTiles.dumpIm("tree_density_fade.png", 10000);
+	//friendlyTiles.dumpIm("tree_density_fade.png", 10000);
 	
 	var obstructions = Map.createObstructionMap(gameState);
 	obstructions.expandInfluences();

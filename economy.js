@@ -258,7 +258,8 @@ EconomyManager.prototype.updateTreeMap = function(gameState, events){
 			var current = supplies['wood'][i];
 			var x = Math.round(current.position[0] / gameState.cellSize);
 			var z = Math.round(current.position[1] / gameState.cellSize);
-			this.treeMap.addInfluence(x, z, Math.round(current.entity.resourceSupplyMax()/decreaseFactor));
+			var radius = Math.round(current.entity.resourceSupplyMax()/decreaseFactor);
+			this.treeMap.addInfluence(x, z, radius, radius);
 		}
 	}
 	// Look for destroy events and subtract the entities original influence from the treeMap
@@ -271,8 +272,8 @@ EconomyManager.prototype.updateTreeMap = function(gameState, events){
 				if (ent && ent.resourceSupplyType() && ent.resourceSupplyType().generic === 'wood'){
 					var x = Math.round(ent.position()[0] / gameState.cellSize);
 					var z = Math.round(ent.position()[1] / gameState.cellSize);
-					
-					this.treeMap.addInfluence(x, z, Math.round(ent.resourceSupplyMax()/decreaseFactor), -1);
+					var radius = Math.round(ent.resourceSupplyMax()/decreaseFactor);
+					this.treeMap.addInfluence(x, z, radius, -1*radius);
 				}
 			}
 		}
@@ -291,7 +292,7 @@ EconomyManager.prototype.getBestForestBuildSpot = function(gameState){
 			var pos = ent.position();
 			var x = Math.round(pos[0] / gameState.cellSize);
 			var z = Math.round(pos[1] / gameState.cellSize);
-			friendlyTiles.addInfluence(x, z, infl, 0.3);
+			friendlyTiles.addInfluence(x, z, infl, 0.3 * infl);
 		}
 		if (ent.resourceDropsiteTypes() && ent.resourceDropsiteTypes().indexOf("wood") !== -1){
 			var infl = 20;
@@ -300,7 +301,7 @@ EconomyManager.prototype.getBestForestBuildSpot = function(gameState){
 			var x = Math.round(pos[0] / gameState.cellSize);
 			var z = Math.round(pos[1] / gameState.cellSize);
 			
-			friendlyTiles.addInfluence(x, z, infl, -100);
+			friendlyTiles.addInfluence(x, z, infl, -100, 'constant');
 		}
 	});
 	

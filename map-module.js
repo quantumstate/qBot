@@ -25,22 +25,53 @@ Map.createObstructionMap = function(gameState){
 	return new Map(gameState, obstructionTiles);
 };
 
-Map.prototype.addInfluence = function(cx, cy, maxDist, strength) {
-	strength = strength ? strength : 1;
+Map.prototype.addInfluence = function(cx, cy, maxDist, strength, type) {
+	strength = strength ? strength : maxDist;
+	type = type ? type : 'linear';
+	
 	var x0 = Math.max(0, cx - maxDist);
 	var y0 = Math.max(0, cy - maxDist);
 	var x1 = Math.min(this.width, cx + maxDist);
 	var y1 = Math.min(this.height, cy + maxDist);
+	var maxDist2 = maxDist * maxDist;
+	
+	var str = 0;
+	switch (type){
+	case 'linear':
+		str = strength / maxDist;
+		break;
+	case 'quadratic':
+		str = strength / maxDist2;
+		break;
+	case 'constant':
+		str = strength;
+		break;
+	}
+	
 	for ( var y = y0; y < y1; ++y) {
 		for ( var x = x0; x < x1; ++x) {
 			var dx = x - cx;
 			var dy = y - cy;
-			var r = Math.sqrt(dx * dx + dy * dy);
-			if (r < maxDist){
-				if (-1*(strength*(maxDist - r)) > this.map[x + y * this.width]){
-					this.map[x + y * this.width] = 0;
+			var r2 = dx*dx + dy*dy;
+			if (r2 < maxDist2){
+				var quant = 0;
+				switch (type){
+				case 'linear':
+					var r = Math.sqrt(r2);
+					quant = str * (maxDist - r);
+					break;
+				case 'quadratic':
+					quant = str * (maxDist2 - r2);
+					break;
+				case 'constant':
+					quant = str;
+					break;
+				}
+				
+				if (-1 * quant > this.map[x + y * this.width]){
+					this.map[x + y * this.width] = 0; //set anything which would have gone negative to 0
 				}else{
-					this.map[x + y * this.width] += strength * (maxDist - r);
+					this.map[x + y * this.width] += quant;
 				}
 			}
 		}

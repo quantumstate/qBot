@@ -75,13 +75,14 @@ BuildingConstructionPlan.prototype.findGoodPosition = function(gameState) {
 				var x = Math.round(pos[0] / cellSize);
 				var z = Math.round(pos[1] / cellSize);
 				if (template._template.BuildRestrictions.Category === "Field"){
+					
 					if (ent.resourceDropsiteTypes() && ent.resourceDropsiteTypes().indexOf("food") !== -1){
-						friendlyTiles.addInfluence(x, z, infl);
+						friendlyTiles.addInfluence(x, z, infl, infl);
 					}
 				}else{
 					friendlyTiles.addInfluence(x, z, infl);
 					if (ent.hasClass("CivCentre")){
-						friendlyTiles.addInfluence(x, z, infl/8, -4);
+						friendlyTiles.addInfluence(x, z, infl/8, -infl/2);
 					}
 				}
 				
@@ -99,6 +100,8 @@ BuildingConstructionPlan.prototype.findGoodPosition = function(gameState) {
 	
 	var x = ((bestIdx % friendlyTiles.width) + 0.5) * cellSize;
 	var z = (Math.floor(bestIdx / friendlyTiles.width) + 0.5) * cellSize;
+	
+	//friendlyTiles.dumpIm("friendly.png");
 
 	// Engine.DumpImage("tiles1.png", obstructionTiles, map.width,
 	// map.height, 32);

@@ -150,6 +150,17 @@ GameState.prototype.countEntitiesAndQueuedWithType = function(type) {
 	return count;
 };
 
+GameState.prototype.countFoundationsWithType = function(type) {
+	var foundationType = "foundation|" + type;
+	var count = 0;
+	this.getOwnEntities().forEach(function(ent) {
+		var t = ent.templateName();
+		if (t == foundationType)
+			++count;
+	});
+	return count;
+};
+
 GameState.prototype.countEntitiesAndQueuedWithRole = function(role) {
 	var count = 0;
 	this.getOwnEntities().forEach(function(ent) {

@@ -78,6 +78,28 @@ Map.prototype.addInfluence = function(cx, cy, maxDist, strength, type) {
 	}
 };
 
+Map.prototype.sumInfluence = function(cx, cy, radius){
+	var x0 = Math.max(0, cx - radius);
+	var y0 = Math.max(0, cy - radius);
+	var x1 = Math.min(this.width, cx + radius);
+	var y1 = Math.min(this.height, cy + radius);
+	var radius2 = radius * radius;
+	
+	var sum = 0;
+	
+	for ( var y = y0; y < y1; ++y) {
+		for ( var x = x0; x < x1; ++x) {
+			var dx = x - cx;
+			var dy = y - cy;
+			var r2 = dx*dx + dy*dy;
+			if (r2 < radius2){
+				sum += this.map[x + y * this.width];
+			}
+		}
+	}
+	return sum;
+};
+
 /**
  * Make each cell's 16-bit value at least one greater than each of its
  * neighbours' values. (If the grid is initialised with 0s and 65535s, the

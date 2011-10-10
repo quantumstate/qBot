@@ -320,6 +320,25 @@ EconomyManager.prototype.getBestForestBuildSpot = function(gameState){
 	return [x,z];
 };
 
+//return the number of wood dropsites with an acceptable amount of wood nearby
+EconomyManager.prototype.checkWoodConcentrations = function(gameState){
+	var self = this;
+	var count = 0;
+	gameState.getOwnEntities().forEach(function(ent) {
+		if (ent.resourceDropsiteTypes() && ent.resourceDropsiteTypes().indexOf("wood") !== -1){
+			var radius = 14;
+			
+			var pos = ent.position();
+			var x = Math.round(pos[0] / gameState.cellSize);
+			var z = Math.round(pos[1] / gameState.cellSize);
+			if (self.treeMap.sumInfluence(x, z, radius) > 16000){
+				count ++;
+			}
+		}
+	});
+	return count;
+};
+
 EconomyManager.prototype.update = function(gameState, queues, events) {
 	Engine.ProfileStart("economy update");
 	
@@ -344,19 +363,11 @@ EconomyManager.prototype.update = function(gameState, queues, events) {
 	this.updateTreeMap(gameState, events);
 	Engine.ProfileStop();
 	
-	if (gameState.getTimeElapsed() > 30 * 1000){
-		var numMills = gameState.countEntitiesAndQueuedWithType(gameState.applyCiv("structures/{civ}_mill"));
-		numMills += queues.economicBuilding.totalLength();
-		if (numMills < 1){
-			var spot = this.getBestForestBuildSpot(gameState);
-			queues.economicBuilding.addItem(new BuildingConstructionPlan(gameState, "structures/{civ}_mill", spot));
-		}
-	}
 	
-	if (gameState.getTimeElapsed() > 300 * 1000){
-		var numMills = gameState.countEntitiesAndQueuedWithType(gameState.applyCiv("structures/{civ}_mill"));
-		numMills += queues.economicBuilding.totalLength();
-		if (numMills < 2){
+	if (queues.economicBuilding.totalLength() === 0 && 
+			gameState.countFoundationsWithType(gameState.applyCiv("structures/{civ}_mill")) === 0){ 
+			//only ever build one mill at a time
+		if (gameState.getTimeElapsed() > 30 * 1000 && this.checkWoodConcentrations(gameState) < 2){
 			var spot = this.getBestForestBuildSpot(gameState);
 			queues.economicBuilding.addItem(new BuildingConstructionPlan(gameState, "structures/{civ}_mill", spot));
 		}

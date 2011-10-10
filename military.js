@@ -279,6 +279,7 @@ MilitaryAttackManager.prototype.getUnitStrength = function(ent){
 	var strength = 0.0;
 	var attackStrength = ent.attackStrengths();
 	var armorStrength = ent.armorStrengths();
+	var hp = 2 * ent.hitpoints() / (160 + 1*ent.maxHitpoints()); //100 = typical number of hitpoints
 	for (var type in attackStrength) {
 		for (var str in attackStrength[type]) {
 			var val = parseFloat(attackStrength[type][str]);
@@ -294,9 +295,6 @@ MilitaryAttackManager.prototype.getUnitStrength = function(ent){
 					break;
 				case "MaxRange":
 					strength += (val * 0.0125) ;
-					break;
-				case "MinRange":
-					strength -= (val * 0.0125) ;
 					break;
 				case "RepeatTime":
 					strength += (val / 100000);
@@ -324,7 +322,7 @@ MilitaryAttackManager.prototype.getUnitStrength = function(ent){
 				break;
 		}
 	}
-	return strength;
+	return strength * hp;
 };
 
 // Returns the  strength of the available units of ai army
@@ -332,7 +330,7 @@ MilitaryAttackManager.prototype.measureAvailableStrength = function(){
 	var  strength = 0.0;
 	for (i in this.unassigned){
 		if (this.unassigned[i]){
-			strength+=this.getUnitStrength(this.entity(i));
+			strength += this.getUnitStrength(this.entity(i));
 		}
 	}
 	return strength;
@@ -376,7 +374,7 @@ MilitaryAttackManager.prototype.measureEnemyStrength = function(gameState){
 			var strength = 0.0;
 			gameState.entities.forEach(function(ent) {
 				if (ent.owner() === i && (ent.hasClass("CitizenSoldier") || ent.hasClass("Super"))) {
-					strength+=self.getUnitStrength(ent);
+					strength += self.getUnitStrength(ent);
 				}
 			});
 			enemyStrength[i] = strength;

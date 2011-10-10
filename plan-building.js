@@ -63,7 +63,7 @@ BuildingConstructionPlan.prototype.findGoodPosition = function(gameState) {
 		var x = Math.round(this.position[0] / cellSize);
 		var z = Math.round(this.position[1] / cellSize);
 		friendlyTiles.addInfluence(x, z, 200);
-		friendlyTiles.dumpIm("pos.png",	200);
+		//friendlyTiles.dumpIm("pos.png",	200);
 	}else{			
 		gameState.getOwnEntities().forEach(function(ent) {
 			if (ent.hasClass("Structure")) {

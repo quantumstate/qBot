@@ -8,6 +8,7 @@
 
 var MilitaryAttackManager = function() {
 	this.targetSquadSize = 10;
+	this.targetScoutTowers = 10;
 	this.squadTypes = [ "units/{civ}_infantry_spearman_b", "units/{civ}_infantry_javelinist_b" ];
 
 	// these use the structure soldiers[unitId] = true|false to register the
@@ -390,7 +391,7 @@ MilitaryAttackManager.prototype.measureEnemyStrength = function(gameState){
 // Adds towers to the defenceBuilding queue
 MilitaryAttackManager.prototype.buildDefences = function(gameState, queues){ 
 	if (gameState.countEntitiesAndQueuedWithType(gameState.applyCiv('structures/{civ}_scout_tower'))
-			+ queues.defenceBuilding.totalLength() < 6) {
+			+ queues.defenceBuilding.totalLength() <= this.targetScoutTowers) {
 		queues.defenceBuilding.addItem(new BuildingConstructionPlan(gameState, 'structures/{civ}_scout_tower'));
 	}
 };

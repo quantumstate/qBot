@@ -38,6 +38,11 @@ var MilitaryAttackManager = function() {
 	this.uCivCitizenSoldier.iber = [ "units/iber_infantry_spearman_b", "units/iber_infantry_slinger_b", "units/iber_infantry_swordsman_b", "units/iber_infantry_javelinist_b" ];
 	this.uCivAdvanced.iber = ["units/iber_cavalry_spearman_b", "units/iber_champion_cavalry", "units/iber_champion_infantry" ];
 	this.uCivSiege.iber = ["units/iber_mechanical_siege_ram"];
+	
+	//defaults
+	this.uCitizenSoldier = ["units/{civ}_infantry_spearman_b", "units/{civ}_infantry_slinger_b", "units/{civ}_infantry_swordsman_b", "units/{civ}_infantry_javelinist_b", "units/{civ}_infantry_archer_b" ];
+	this.uAdvanced = ["units/{civ}_cavalry_spearman_b", "units/{civ}_cavalry_javelinist_b", "units/{civ}_champion_cavalry", "units/{civ}_champion_infantry"];
+	this.uSiege = ["units/{civ}_mechanical_siege_oxybeles", "units/{civ}_mechanical_siege_lithobolos", "units/{civ}_mechanical_siege_ballista","units/{civ}_mechanical_siege_ram"];
 
 	// buildings
 	this.bModerate = [ "structures/{civ}_barracks" ]; //same for all civs
@@ -60,6 +65,17 @@ MilitaryAttackManager.prototype.init = function(gameState) {
 
 		this.bAdvanced = this.bCivAdvanced[civ];
 	}
+	
+	for (i in this.uCitizenSoldier){
+		this.uCitizenSoldier[i] = gameState.applyCiv(this.uCitizenSoldier[i]);
+	}
+	for (i in this.uAdvanced){
+		this.uAdvanced[i] = gameState.applyCiv(this.uAdvanced[i]);
+	}
+	for (i in this.uSiege){
+		this.uSiege[i] = gameState.applyCiv(this.uSiege[i]);
+	}
+	
 };
 
 

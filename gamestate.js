@@ -38,7 +38,11 @@ GameState.prototype.getResources = function() {
 };
 
 GameState.prototype.getMap = function() {
-	return this.ai.map;
+	if (this.ai.map){
+		return this.ai.map;
+	}else{
+		return this.ai.passabilityMap;
+	}
 };
 
 GameState.prototype.getPopulation = function() {

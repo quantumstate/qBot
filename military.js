@@ -286,7 +286,7 @@ MilitaryAttackManager.prototype.entity = function(id) {
 MilitaryAttackManager.prototype.getUnitStrength = function(ent){
 	var strength = 0.0;
 	var attackStrength = ent.attackStrengths();
-	var armorStrength = ent.armorStrengths();
+	var armourStrength = ent.armourStrengths();
 	var hp = 2 * ent.hitpoints() / (160 + 1*ent.maxHitpoints()); //100 = typical number of hitpoints
 	for (var type in attackStrength) {
 		for (var str in attackStrength[type]) {
@@ -316,8 +316,8 @@ MilitaryAttackManager.prototype.getUnitStrength = function(ent){
 			}
 		}
 	}
-	for (var str in armorStrength) {
-		var val = parseFloat(armorStrength[str]);
+	for (var str in armourStrength) {
+		var val = parseFloat(armourStrength[str]);
 		switch (str) {
 			case "Crush":
 				strength += (val * 0.085) / 3;

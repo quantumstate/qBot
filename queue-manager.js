@@ -88,14 +88,9 @@ QueueManager.prototype.futureNeeds = function(gameState) {
 // affordable plans to the Out Queues. Returns a list of the unneeded resources
 // so they can be used by lower priority plans.
 QueueManager.prototype.affordableToOutQueue = function(gameState) {
-	var available = {
-		"food" : true,
-		"wood" : true,
-		"stone" : true,
-		"metal" : true
-	};
+	var availableRes = this.getAvailableResources(gameState);
 	if (this.curItemQueue.length === 0) {
-		return available;
+		return availableRes;
 	}
 
 	var resources = this.getAvailableResources(gameState);
@@ -103,20 +98,12 @@ QueueManager.prototype.affordableToOutQueue = function(gameState) {
 	// Check everything in the curItemQueue, if it is affordable then mark it
 	// for execution
 	for ( var i = 0; i < this.curItemQueue.length; i++) {
+		availableRes.subtract(this.queues[this.curItemQueue[i]].getNext().getCost());
 		if (resources.canAfford(this.queues[this.curItemQueue[i]].getNext().getCost())) {
 			this.account[this.curItemQueue[i]] -= this.queues[this.curItemQueue[i]].getNext().getCost().toInt();
 			this.queues[this.curItemQueue[i]].nextToOutQueue();
 			resources = this.getAvailableResources(gameState);
 			this.curItemQueue[i] = null;
-			for (key in available) {
-				available[key] = false;
-			}
-		} else {
-			for (key in available) {
-				if (this.queues[this.curItemQueue[i]].getNext().getCost()[key] != 0) {
-					available[key] = false;
-				}
-			}
 		}
 	}
 
@@ -129,19 +116,42 @@ QueueManager.prototype.affordableToOutQueue = function(gameState) {
 	}
 	this.curItemQueue = tmpQueue;
 
-	return available;
+	return availableRes;
 };
 
 QueueManager.prototype.onlyUsesSpareAndUpdateSpare = function(unitCost, spare){
-	var ret = true;
-	for (key in spare){
-		if (!spare[key] && unitCost[key] != 0){
-			ret = false;
-		}
-		if (unitCost[key] != 0){
-			spare[key] = false;
+	// This allows plans to be given resources if there are >500 spare after all the 
+	// higher priority plan queues have been looked at and there are still enough resources
+	// We make it >0 so that even if we have no stone available we can still have non stone
+	// plans being given resources.
+	var spareNonNegRes = {
+		food: Math.max(0, spare.food - 500),
+		wood: Math.max(0, spare.wood - 500),
+		stone: Math.max(0, spare.stone - 500),
+		metal: Math.max(0, spare.metal - 500),
+	};
+	var spareNonNeg = new Resources(spareNonNegRes);
+	var ret = false;
+	if (spareNonNeg.canAfford(unitCost)){
+		ret = true;
+	}
+	
+	// If there are no negative resources then there weren't any higher priority items so we 
+	// definitely want to say that this can be added to the list.
+	var tmp = true;
+	for (key in spare.types){
+		var type = spare.types[key];
+		if (spare[type] < 0){
+			tmp = false;
 		}
 	}
+	// If either to the above sections returns true then 
+	ret = ret || tmp;
+	
+	spare.subtract(unitCost); // take the resources of the current unit from spare since this
+	                          // must be higher priority than any which are looked at 
+	                          // afterwards.
+	
 	return ret;
 };
 
@@ -185,6 +195,7 @@ QueueManager.prototype.printQueues = function(){
 };
 
 QueueManager.prototype.update = function(gameState) {
+	//this.printQueues();
 	// See if there is a high priority item from last time.
 	this.affordableToOutQueue(gameState);
 	do {
@@ -215,13 +226,13 @@ QueueManager.prototype.update = function(gameState) {
 			break;
 		}
 
-		var available = this.affordableToOutQueue(gameState);
+		var availableRes = this.affordableToOutQueue(gameState);
 
 		// if there are no affordable items use any resources which aren't
 		// wanted by a higher priority item
-		if ((available["food"] || available["wood"] || available["stone"] || available["metal"])
+		if ((availableRes["food"] > 0 || availableRes["wood"] > 0 || availableRes["stone"] > 0 || availableRes["metal"] > 0)
 				&& ratioMinQueue !== undefined) {
-			while (Object.keys(ratio).length > 0 && (available["food"] || available["wood"] || available["stone"] || available["metal"])){
+			while (Object.keys(ratio).length > 0 && (availableRes["food"] > 0 || availableRes["wood"] > 0 || availableRes["stone"] > 0 || availableRes["metal"] > 0)){
 				ratioMin = Math.min(); //biggest value
 				for (key in ratio){
 					if (ratio[key] < ratioMin){
@@ -229,7 +240,7 @@ QueueManager.prototype.update = function(gameState) {
 						ratioMinQueue = key;
 					}
 				}
-				if (this.onlyUsesSpareAndUpdateSpare(this.queues[ratioMinQueue].getNext().getCost(), available)){
+				if (this.onlyUsesSpareAndUpdateSpare(this.queues[ratioMinQueue].getNext().getCost(), availableRes)){
 					for (p in this.queues) {
 						this.account[p] += ratioMin * this.priorities[p];
 					}

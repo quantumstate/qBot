@@ -16,7 +16,6 @@ var MilitaryAttackManager = function() {
 	this.soldiers = {};
 	this.assigned = {};
 	this.unassigned = {};
-	// this.enemyAttackers = {};
 
 	// units
 	this.uCivCitizenSoldier= {};
@@ -88,17 +87,11 @@ MilitaryAttackManager.prototype.findTrainableUnits = function(gameState, soldier
 	gameState.getOwnEntities().forEach(function(ent) {
 		var trainable = ent.trainableEntities();
 		for (i in trainable){
-			//var template = new EntityTemplate(gameState.ai.GetTemplate(trainable[i]));
 			if (soldierTypes.indexOf(trainable[i]) !== -1){
 				if (ret.indexOf(trainable[i]) === -1){
 					ret.push(trainable[i]);
 				}
 			} 
-			/*if (template.hasClass("CitizenSoldier") || template.hasClass("Super")){
-				if (ret.indexOf(trainable[i]) === -1){
-					ret.push(trainable[i]);
-				}
-			}*/
 		}
 		return true;
 	});
@@ -144,7 +137,6 @@ MilitaryAttackManager.prototype.registerSoldiers = function(gameState) {
 
 	soldiers.forEach(function(ent) {
 		ent.setMetadata("role", "registeredSoldier");
-		//ent.setMetadata("role", "attack-pending");
 		self.soldiers[ent.id()] = true;
 		self.unassigned[ent.id()] = true;
 	});
@@ -189,7 +181,6 @@ MilitaryAttackManager.prototype.defence = function(gameState) {
 		var ent = new Entity(gameState.ai, ents[id]);
 		if (ent.getMetadata("attackers") === undefined || ent.getMetadata("attackers").length < defendersPerAttacker) {
 			var tasked = this.getAvailableUnits(3);
-			//warn(uneval(tasked));
 			if (tasked.length > 0) {
 				Engine.PostCommand({
 					"type" : "attack",
@@ -414,17 +405,10 @@ MilitaryAttackManager.prototype.buildDefences = function(gameState, queues){
 
 MilitaryAttackManager.prototype.update = function(gameState, queues, events) {
 
-	// Pause for a minute before starting any work, to give the economy a chance to start up
-	// if (gameState.getTimeElapsed() < 60 * 1000)
-		// return;
-
 	Engine.ProfileStart("military update");
 	this.gameState = gameState;
 
 	this.handleEvents(gameState, events);
-
-	//warn(uneval(this.assigned));
-	//warn(uneval(this.unassigned));
 
 	// this.attackElephants(gameState);
 	this.registerSoldiers(gameState);

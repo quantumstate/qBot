@@ -319,13 +319,13 @@ MilitaryAttackManager.prototype.getUnitStrength = function(ent){
 	for (var str in armourStrength) {
 		var val = parseFloat(armourStrength[str]);
 		switch (str) {
-			case "Crush":
+			case "crush":
 				strength += (val * 0.085) / 3;
 				break;
-			case "Hack":
+			case "hack":
 				strength += (val * 0.075) / 3;
 				break;
-			case "Pierce":
+			case "pierce":
 				strength += (val * 0.065) / 3;
 				break;
 		}

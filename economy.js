@@ -339,7 +339,6 @@ EconomyManager.prototype.checkResourceConcentrations = function(gameState, resou
 			var pos = ent.position();
 			var x = Math.round(pos[0] / gameState.cellSize);
 			var z = Math.round(pos[1] / gameState.cellSize);
-			debug(resource + self.resourceMaps[resource].sumInfluence(x, z, radius));
 			if (self.resourceMaps[resource].sumInfluence(x, z, radius) > requiredInfluence[resource]){
 				count ++;
 			}
@@ -372,21 +371,32 @@ EconomyManager.prototype.update = function(gameState, queues, events) {
 	this.updateResourceMaps(gameState, events);
 	Engine.ProfileStop();
 	
+	var resources = ["wood", "stone", "metal"];
+	var dropsiteNumbers = {wood: 2, stone: 1, metal: 1};
 	
 	if (queues.economicBuilding.totalLength() === 0 && 
-			gameState.countFoundationsWithType(gameState.applyCiv("structures/{civ}_mill")) === 0){ 
-			//only ever build one mill at a time
+			gameState.countFoundationsWithType(gameState.applyCiv("structures/{civ}_mill")) === 0 &&
+			gameState.countFoundationsWithType(gameState.applyCiv("structures/{civ}_civil_centre")) === 0){ 
+			//only ever build one mill/CC at a time
 		if (gameState.getTimeElapsed() > 30 * 1000){
-			
-			if (this.checkResourceConcentrations(gameState, "wood") < 2){
-				var spot = this.getBestResourceBuildSpot(gameState, "wood");
-				queues.economicBuilding.addItem(new BuildingConstructionPlan(gameState, "structures/{civ}_mill", spot));
-			}else if (this.checkResourceConcentrations(gameState, "stone") < 1){
-				var spot = this.getBestResourceBuildSpot(gameState, "stone");
-				queues.economicBuilding.addItem(new BuildingConstructionPlan(gameState, "structures/{civ}_mill", spot));
-			}else if (this.checkResourceConcentrations(gameState, "metal") < 1){
-				var spot = this.getBestResourceBuildSpot(gameState, "metal");
-				queues.economicBuilding.addItem(new BuildingConstructionPlan(gameState, "structures/{civ}_mill", spot));
+			for (key in resources){
+				var resource = resources[key];
+				if (this.checkResourceConcentrations(gameState, resource) < dropsiteNumbers[resource]){
+					var spot = this.getBestResourceBuildSpot(gameState, resource);
+					
+					var myCivCentres = gameState.getOwnEntities().filter(function(ent) {
+						var dist2 = (spot[0]-ent.position()[0])*(spot[0]-ent.position()[0]) + 
+						            (spot[0]-ent.position()[1])*(spot[0]-ent.position()[1])
+						return ent.hasClass("CivCentre") && dist2 < 190*190;
+					});
+					
+					if (myCivCentres.length === 0){
+						queues.economicBuilding.addItem(new BuildingConstructionPlan(gameState, "structures/{civ}_civil_centre", spot));
+					}else{
+						queues.economicBuilding.addItem(new BuildingConstructionPlan(gameState, "structures/{civ}_mill", spot));
+					}
+					break;
+				}
 			}
 		}
 	}

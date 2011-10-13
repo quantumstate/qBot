@@ -11,6 +11,8 @@ var EconomyManager = function() {
 		"metal" : 100,
 	};
 	
+	this.resourceMaps = {};
+	
 	this.setCount = 0;
 };
 
@@ -246,43 +248,48 @@ EconomyManager.prototype.buildNewCC= function(gameState, queues) {
 };
 
 //creates and maintains a map of tree density
-EconomyManager.prototype.updateTreeMap = function(gameState, events){
-	// if there is no treeMap create one with an influence for everything with wood resource
-	var decreaseFactor = 15;
+EconomyManager.prototype.updateResourceMaps = function(gameState, events){
+	var decreaseFactor = {wood: 15, stone: 100, metal: 100};
+	var radius = {wood:13, stone: 10, metal: 10};
+	var resources = ["wood", "stone", "metal"];
 	
-	if (! this.treeMap){
-		this.treeMap = new Map(gameState);
+	for (key in resources){
+		var resource = resources[key];
+		// if there is no resourceMap create one with an influence for everything with that resource
+		if (! this.resourceMaps[resource]){
+			this.resourceMaps[resource] = new Map(gameState);
 
-		var supplies = gameState.findResourceSupplies();
-		for (i in supplies['wood']){
-			var current = supplies['wood'][i];
-			var x = Math.round(current.position[0] / gameState.cellSize);
-			var z = Math.round(current.position[1] / gameState.cellSize);
-			var radius = Math.round(current.entity.resourceSupplyMax()/decreaseFactor);
-			this.treeMap.addInfluence(x, z, radius, radius);
+			var supplies = gameState.findResourceSupplies();
+			for (i in supplies[resource]){
+				var current = supplies[resource][i];
+				var x = Math.round(current.position[0] / gameState.cellSize);
+				var z = Math.round(current.position[1] / gameState.cellSize);
+				var strength = Math.round(current.entity.resourceSupplyMax()/decreaseFactor[resource]);
+				this.resourceMaps[resource].addInfluence(x, z, radius[resource], strength);
+			}
 		}
-	}
-	// Look for destroy events and subtract the entities original influence from the treeMap
-	for (i in events) {
-		var e = events[i];
+		// Look for destroy events and subtract the entities original influence from the treeMap
+		for (i in events) {
+			var e = events[i];
 
-		if (e.type === "Destroy") {
-			if (e.msg.rawEntity.template){
-				var ent = new Entity(gameState.ai, e.msg.rawEntity);
-				if (ent && ent.resourceSupplyType() && ent.resourceSupplyType().generic === 'wood'){
-					var x = Math.round(ent.position()[0] / gameState.cellSize);
-					var z = Math.round(ent.position()[1] / gameState.cellSize);
-					var radius = Math.round(ent.resourceSupplyMax()/decreaseFactor);
-					this.treeMap.addInfluence(x, z, radius, -1*radius);
+			if (e.type === "Destroy") {
+				if (e.msg.rawEntity.template){
+					var ent = new Entity(gameState.ai, e.msg.rawEntity);
+					if (ent && ent.resourceSupplyType() && ent.resourceSupplyType().generic === resource){
+						var x = Math.round(ent.position()[0] / gameState.cellSize);
+						var z = Math.round(ent.position()[1] / gameState.cellSize);
+						var strength = Math.round(ent.resourceSupplyMax()/decreaseFactor[resource]);
+						this.resourceMaps[resource].addInfluence(x, z, radius[resource], -1*strength);
+					}
 				}
 			}
 		}
-	}
+	} 
 	
-	//this.treeMap.dumpIm("tree_density.png");
+	//this.resourceMaps[resource].dumpIm("tree_density.png");
 };
 
-EconomyManager.prototype.getBestForestBuildSpot = function(gameState){
+EconomyManager.prototype.getBestResourceBuildSpot = function(gameState, resource){
 	
 	var friendlyTiles = new Map(gameState);
 	gameState.getOwnEntities().forEach(function(ent) {
@@ -294,7 +301,7 @@ EconomyManager.prototype.getBestForestBuildSpot = function(gameState){
 			var z = Math.round(pos[1] / gameState.cellSize);
 			friendlyTiles.addInfluence(x, z, infl, 0.3 * infl);
 		}
-		if (ent.resourceDropsiteTypes() && ent.resourceDropsiteTypes().indexOf("wood") !== -1){
+		if (ent.resourceDropsiteTypes() && ent.resourceDropsiteTypes().indexOf(resource) !== -1){
 			var infl = 20;
 			
 			var pos = ent.position();
@@ -305,7 +312,7 @@ EconomyManager.prototype.getBestForestBuildSpot = function(gameState){
 		}
 	});
 	
-	friendlyTiles.multiply(this.treeMap);
+	friendlyTiles.multiply(this.resourceMaps[resource]);
 	
 	//friendlyTiles.dumpIm("tree_density_fade.png", 10000);
 	
@@ -321,17 +328,19 @@ EconomyManager.prototype.getBestForestBuildSpot = function(gameState){
 };
 
 //return the number of wood dropsites with an acceptable amount of wood nearby
-EconomyManager.prototype.checkWoodConcentrations = function(gameState){
+EconomyManager.prototype.checkResourceConcentrations = function(gameState, resource){
+	var requiredInfluence = {wood: 16000, stone: 300, metal: 300};
 	var self = this;
 	var count = 0;
 	gameState.getOwnEntities().forEach(function(ent) {
-		if (ent.resourceDropsiteTypes() && ent.resourceDropsiteTypes().indexOf("wood") !== -1){
+		if (ent.resourceDropsiteTypes() && ent.resourceDropsiteTypes().indexOf(resource) !== -1){
 			var radius = 14;
 			
 			var pos = ent.position();
 			var x = Math.round(pos[0] / gameState.cellSize);
 			var z = Math.round(pos[1] / gameState.cellSize);
-			if (self.treeMap.sumInfluence(x, z, radius) > 16000){
+			debug(resource + self.resourceMaps[resource].sumInfluence(x, z, radius));
+			if (self.resourceMaps[resource].sumInfluence(x, z, radius) > requiredInfluence[resource]){
 				count ++;
 			}
 		}
@@ -359,17 +368,26 @@ EconomyManager.prototype.update = function(gameState, queues, events) {
 		this.targetNumBuilders = 5;
 	}
 	
-	Engine.ProfileStart("Update Tree Map");
-	this.updateTreeMap(gameState, events);
+	Engine.ProfileStart("Update Resource Maps");
+	this.updateResourceMaps(gameState, events);
 	Engine.ProfileStop();
 	
 	
 	if (queues.economicBuilding.totalLength() === 0 && 
 			gameState.countFoundationsWithType(gameState.applyCiv("structures/{civ}_mill")) === 0){ 
 			//only ever build one mill at a time
-		if (gameState.getTimeElapsed() > 30 * 1000 && this.checkWoodConcentrations(gameState) < 2){
-			var spot = this.getBestForestBuildSpot(gameState);
-			queues.economicBuilding.addItem(new BuildingConstructionPlan(gameState, "structures/{civ}_mill", spot));
+		if (gameState.getTimeElapsed() > 30 * 1000){
+			
+			if (this.checkResourceConcentrations(gameState, "wood") < 2){
+				var spot = this.getBestResourceBuildSpot(gameState, "wood");
+				queues.economicBuilding.addItem(new BuildingConstructionPlan(gameState, "structures/{civ}_mill", spot));
+			}else if (this.checkResourceConcentrations(gameState, "stone") < 1){
+				var spot = this.getBestResourceBuildSpot(gameState, "stone");
+				queues.economicBuilding.addItem(new BuildingConstructionPlan(gameState, "structures/{civ}_mill", spot));
+			}else if (this.checkResourceConcentrations(gameState, "metal") < 1){
+				var spot = this.getBestResourceBuildSpot(gameState, "metal");
+				queues.economicBuilding.addItem(new BuildingConstructionPlan(gameState, "structures/{civ}_mill", spot));
+			}
 		}
 	}
 	

@@ -1,21 +1,12 @@
 var EconomyManager = function() {
-	this.targetNumWorkers = 60; // minimum number of workers we want
-	this.targetNumBuilders = 5; // number of workers we want working on
-
+	this.targetNumBuilders = 5; // number of workers we want building stuff
 	this.targetNumFields = 5;
-
-	this.gatherWeights = {
-		"food" : 150,
-		"wood" : 100,
-		"stone" : 50,
-		"metal" : 100,
-	};
 	
-	this.resourceMaps = {};
+	this.resourceMaps = {}; // Contains maps showing the density of wood, stone and metal
 	
-	this.setCount = 0;
+	this.setCount = 0;  //stops villagers being reassigned to other resources too frequently
 };
-
+// More initialisation for stuff that needs the gameState
 EconomyManager.prototype.init = function(gameState){
 	this.targetNumWorkers = Math.floor(gameState.getPopulationMax()/3);
 };
@@ -35,6 +26,7 @@ EconomyManager.prototype.trainMoreWorkers = function(gameState, queues) {
 	}
 };
 
+// Pick the resource which most needs another worker
 EconomyManager.prototype.pickMostNeededResources = function(gameState) {
 
 	var self = this;
@@ -77,6 +69,8 @@ EconomyManager.prototype.reassignRolelessUnits = function(gameState) {
 	});
 };
 
+// If the numbers of workers on the resources is unbalanced then set some of workers to idle so 
+// they can be reassigned by reassignIdleWorkers.
 EconomyManager.prototype.setWorkersIdleByPriority = function(gameState){
 	this.gatherWeights = gameState.ai.queueManager.futureNeeds(gameState);
 	
@@ -113,10 +107,7 @@ EconomyManager.prototype.reassignIdleWorkers = function(gameState) {
 	
 	var self = this;
 
-	// Search for idle workers, and tell them to gather resources
-	// Maybe just pick a random nearby resource type at first;
-	// later we could add some timer that redistributes workers based on
-	// resource demand.
+	// Search for idle workers, and tell them to gather resources based on demand
 
 	var idleWorkers = gameState.getOwnEntitiesWithRole("worker").filter(function(ent) {
 		return (ent.isIdle() || ent.getMetadata("subrole") === "idle");
@@ -238,6 +229,7 @@ EconomyManager.prototype.buildMoreFields = function(gameState, queues) {
 	}
 };
 
+// If all the CC's are destroyed then build a new one
 EconomyManager.prototype.buildNewCC= function(gameState, queues) {
 	var numCCs = gameState.countEntitiesAndQueuedWithType(gameState.applyCiv("structures/{civ}_civil_centre"));
 	numCCs += queues.civilCentre.totalLength();
@@ -249,7 +241,9 @@ EconomyManager.prototype.buildNewCC= function(gameState, queues) {
 
 //creates and maintains a map of tree density
 EconomyManager.prototype.updateResourceMaps = function(gameState, events){
+	// The weight of the influence function is amountOfResource/decreaseFactor 
 	var decreaseFactor = {wood: 15, stone: 100, metal: 100};
+	// This is the maximum radius of the influence
 	var radius = {wood:13, stone: 10, metal: 10};
 	var resources = ["wood", "stone", "metal"];
 	
@@ -268,7 +262,7 @@ EconomyManager.prototype.updateResourceMaps = function(gameState, events){
 				this.resourceMaps[resource].addInfluence(x, z, radius[resource], strength);
 			}
 		}
-		// Look for destroy events and subtract the entities original influence from the treeMap
+		// Look for destroy events and subtract the entities original influence from the resourceMap
 		for (i in events) {
 			var e = events[i];
 
@@ -289,10 +283,12 @@ EconomyManager.prototype.updateResourceMaps = function(gameState, events){
 	//this.resourceMaps[resource].dumpIm("tree_density.png");
 };
 
+// Returns the position of the best place to build a new dropsite for the specified resource
 EconomyManager.prototype.getBestResourceBuildSpot = function(gameState, resource){
-	
+	// A map which gives a positive weight for all CCs and adds a negative weight near all dropsites
 	var friendlyTiles = new Map(gameState);
 	gameState.getOwnEntities().forEach(function(ent) {
+		// We want to build near a CC of ours
 		if (ent.hasClass("CivCentre")){
 			var infl = 90;
 
@@ -301,6 +297,7 @@ EconomyManager.prototype.getBestResourceBuildSpot = function(gameState, resource
 			var z = Math.round(pos[1] / gameState.cellSize);
 			friendlyTiles.addInfluence(x, z, infl, 0.3 * infl);
 		}
+		// We don't want multiple dropsites at one spot so add a negative for all dropsites
 		if (ent.resourceDropsiteTypes() && ent.resourceDropsiteTypes().indexOf(resource) !== -1){
 			var infl = 20;
 			
@@ -312,6 +309,7 @@ EconomyManager.prototype.getBestResourceBuildSpot = function(gameState, resource
 		}
 	});
 	
+	// Multiply by tree density to get a combination of the two maps
 	friendlyTiles.multiply(this.resourceMaps[resource]);
 	
 	//friendlyTiles.dumpIm("tree_density_fade.png", 10000);
@@ -321,14 +319,16 @@ EconomyManager.prototype.getBestResourceBuildSpot = function(gameState, resource
 	
 	var bestIdx = friendlyTiles.findBestTile(4, obstructions)[0];
 	
+	// Convert from 1d map pixel coordinates to game engine coordinates
 	var x = ((bestIdx % friendlyTiles.width) + 0.5) * gameState.cellSize;
 	var z = (Math.floor(bestIdx / friendlyTiles.width) + 0.5) * gameState.cellSize;
 	
 	return [x,z];
 };
 
-//return the number of wood dropsites with an acceptable amount of wood nearby
+//return the number of resource dropsites with an acceptable amount of the resource nearby
 EconomyManager.prototype.checkResourceConcentrations = function(gameState, resource){
+	//TODO: make these values adaptive 
 	var requiredInfluence = {wood: 16000, stone: 300, metal: 300};
 	var self = this;
 	var count = 0;
@@ -385,9 +385,10 @@ EconomyManager.prototype.update = function(gameState, queues, events) {
 					var spot = this.getBestResourceBuildSpot(gameState, resource);
 					
 					var myCivCentres = gameState.getOwnEntities().filter(function(ent) {
-						var dist2 = (spot[0]-ent.position()[0])*(spot[0]-ent.position()[0]) + 
-						            (spot[0]-ent.position()[1])*(spot[0]-ent.position()[1])
-						return ent.hasClass("CivCentre") && dist2 < 190*190;
+						var dx = (spot[0]-ent.position()[0]);
+						var dy = (spot[1]-ent.position()[1]);
+						var dist2 = dx*dx + dy*dy;
+						return (ent.hasClass("CivCentre") && dist2 < 190*190);
 					});
 					
 					if (myCivCentres.length === 0){
@@ -401,6 +402,7 @@ EconomyManager.prototype.update = function(gameState, queues, events) {
 		}
 	}
 	
+	// TODO: implement a timer based system for this
 	this.setCount += 1;
 	if (this.setCount >= 20){
 		this.setWorkersIdleByPriority(gameState);

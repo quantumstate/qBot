@@ -285,33 +285,39 @@ MilitaryAttackManager.prototype.entity = function(id) {
 // Returns the military strength of unit 
 MilitaryAttackManager.prototype.getUnitStrength = function(ent){
 	var strength = 0.0;
-	var attackStrength = ent.attackStrengths();
+	var attackTypes = ent.attackTypes();
 	var armourStrength = ent.armourStrengths();
 	var hp = 2 * ent.hitpoints() / (160 + 1*ent.maxHitpoints()); //100 = typical number of hitpoints
-	for (var type in attackStrength) {
-		for (var str in attackStrength[type]) {
-			var val = parseFloat(attackStrength[type][str]);
+	for (var typeKey in attackTypes) {
+		var type = attackTypes[typeKey];
+		var attackStrength = ent.attackStrengths(type);
+		var attackRange = ent.attackRange(type);
+		var attackTimes = ent.attackTimes(type);
+		for (var str in attackStrength) {
+			var val = parseFloat(attackStrength[str]);
 			switch (str) {
-				case "Crush":
+				case "crush":
 					strength += (val * 0.085) / 3;
 					break;
-				case "Hack":
+				case "hack":
 					strength += (val * 0.075) / 3;
 					break;
-				case "Pierce":
+				case "pierce":
 					strength += (val * 0.065) / 3;
 					break;
-				case "MaxRange":
-					strength += (val * 0.0125) ;
-					break;
-				case "RepeatTime":
+			}
+		}
+		if (attackRange){
+			strength += (attackRange.max * 0.0125) ;
+		}
+		for (var str in attackTimes) {
+			var val = parseFloat(attackTimes[str]);
+			switch (str){
+				case "repeat":
 					strength += (val / 100000);
 					break;
-				case "PrepareTime":
+				case "prepare":
 					strength -= (val / 100000);
-					break;
-				case "ProjectileSpeed":
-					strength += (val / 1000);
 					break;
 			}
 		}

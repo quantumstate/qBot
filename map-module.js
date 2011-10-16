@@ -1,3 +1,5 @@
+// TODO: Make this cope with negative cell values 
+
 function Map(gameState, originalMap){
 	var gameMap = gameState.getMap();
 	this.width = gameMap.width;
@@ -20,6 +22,21 @@ Map.createObstructionMap = function(gameState){
 	var obstructionTiles = new Uint16Array(map.data.length);
 	for ( var i = 0; i < map.data.length; ++i){
 		obstructionTiles[i] = (map.data[i] & obstructionMask) ? 0 : 65535;
+	}
+	
+	return new Map(gameState, obstructionTiles);
+};
+
+Map.createTerritoryMap = function(gameState){
+	var map = gameState.ai.territoryMap;
+
+	//var obstructionMask = gameState.getPassabilityClassMask("foundationObstruction");
+	// Only accept valid land tiles (we don't handle docks yet)
+	//obstructionMask |= gameState.getPassabilityClassMask("building-land");
+
+	var obstructionTiles = new Uint16Array(map.data.length);
+	for ( var i = 0; i < map.data.length; ++i){
+		obstructionTiles[i] = map.data[i] & 15;
 	}
 	
 	return new Map(gameState, obstructionTiles);

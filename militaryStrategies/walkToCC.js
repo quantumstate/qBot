@@ -1,17 +1,38 @@
 var WalkToCC = function(){
-	this.minAttackSize = 20;
+	this.minAttackSize = 5;
 	this.maxAttackSize = 60;
+	this.idList=[];
 };
 
 WalkToCC.prototype.execute = function(gameState, militaryManager){
 	var maxStrength = militaryManager.measureEnemyStrength(gameState);
 	var maxCount = militaryManager.measureEnemyCount(gameState);
 	
-	this.targetSquadSize = maxCount * 1.5;
-	this.targetStrength = maxStrength * 1.5;
+	this.targetSquadSize = maxCount / 1.5;
+	this.targetStrength = maxStrength / 1.5;
 	
 	// Find the units ready to join the attack
 	var availableCount = militaryManager.countAvailableUnits();
+	var removeList = [];
+	for (var idKey in this.idList){
+		var id = this.idList[idKey];
+		var ent = militaryManager.entity(id);
+		if(ent)
+		{
+			if(ent.isIdle()) {
+				militaryManager.unassignUnit(id);
+				removeList.push(id);
+				debug("idle");
+			}
+		} else {
+			removeList.push(id);
+		}
+	}
+	for (i in removeList){
+		this.idList.splice(this.idList.indexOf(removeList[i]),1);
+	}
+	
+	availableCount = militaryManager.countAvailableUnits();
 	var availableStrength = militaryManager.measureAvailableStrength();
 	//var pending = gameState.getOwnEntitiesWithRole("attack-pending");
 	
@@ -21,8 +42,11 @@ WalkToCC.prototype.execute = function(gameState, militaryManager){
 	// If we have enough units or strength yet, start the attack
 	if ((availableStrength >= this.targetStrength && availableCount >= this.minAttackSize)
 			|| availableCount >= this.maxAttackSize) {
-		var idList = militaryManager.getAvailableUnits(availableCount);
-		var pending = EntityCollectionFromIds(gameState, idList);
+		
+		var list = militaryManager.getAvailableUnits(availableCount);
+		this.idList = this.idList.concat(list);
+		
+		var pending = EntityCollectionFromIds(gameState, this.list);
 		
 		// Find the enemy CCs we could attack
 		var targets = gameState.entities.filter(function(ent) {

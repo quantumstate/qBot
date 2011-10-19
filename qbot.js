@@ -23,7 +23,7 @@ function QBotAI(settings) {
 	this.productionQueues = [];
 	
 	var priorities = {
-		house : 100,
+		house : 500,
 		citizenSoldier : 100,
 		villager : 100,
 		economicBuilding : 30,

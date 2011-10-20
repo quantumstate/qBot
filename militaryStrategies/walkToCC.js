@@ -1,5 +1,5 @@
 var WalkToCC = function(){
-	this.minAttackSize = 5;
+	this.minAttackSize = 20;
 	this.maxAttackSize = 60;
 	this.idList=[];
 };
@@ -8,8 +8,8 @@ WalkToCC.prototype.execute = function(gameState, militaryManager){
 	var maxStrength = militaryManager.measureEnemyStrength(gameState);
 	var maxCount = militaryManager.measureEnemyCount(gameState);
 	
-	this.targetSquadSize = maxCount / 1.5;
-	this.targetStrength = maxStrength / 1.5;
+	this.targetSquadSize = maxCount * 1.5;
+	this.targetStrength = maxStrength * 1.5;
 	
 	// Find the units ready to join the attack
 	var availableCount = militaryManager.countAvailableUnits();
@@ -22,7 +22,6 @@ WalkToCC.prototype.execute = function(gameState, militaryManager){
 			if(ent.isIdle()) {
 				militaryManager.unassignUnit(id);
 				removeList.push(id);
-				debug("idle");
 			}
 		} else {
 			removeList.push(id);
@@ -34,7 +33,6 @@ WalkToCC.prototype.execute = function(gameState, militaryManager){
 	
 	availableCount = militaryManager.countAvailableUnits();
 	var availableStrength = militaryManager.measureAvailableStrength();
-	//var pending = gameState.getOwnEntitiesWithRole("attack-pending");
 	
 	debug("Troops needed for attack: " + this.targetSquadSize + " Have: " + availableCount);
 	debug("Troops strength for attack: " + this.targetStrength + " Have: " + availableStrength);
@@ -48,16 +46,20 @@ WalkToCC.prototype.execute = function(gameState, militaryManager){
 		
 		var pending = EntityCollectionFromIds(gameState, list);
 		
-		// Find the enemy CCs we could attack
-		var targets = gameState.entities.filter(function(ent) {
-			return (gameState.isEntityEnemy(ent) && ent.hasClass("CivCentre") && ent.owner() !== 0);
-		});
-
-		// If there's no CCs, attack anything else that's critical
+		// Find the critical enemy buildings we could attack
+		var targets = militaryManager.getEnemyBuildings(gameState,"ConquestCritical");
+		// If there are no critical structures, attack anything else that's critical
 		if (targets.length == 0) {
 			targets = gameState.entities.filter(function(ent) {
 				return (gameState.isEntityEnemy(ent) && ent.hasClass("ConquestCritical") && ent.owner() !== 0);
 			});
+		}
+		// If there's nothing, attack anything else that's less critical
+		if (targets.length == 0) {
+			targets = militaryManager.getEnemyBuildings(gameState,"Town");
+		}
+		if (targets.length == 0) {
+			targets = militaryManager.getEnemyBuildings(gameState,"Village");
 		}
 
 		// If we have a target, move to it

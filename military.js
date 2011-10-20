@@ -199,6 +199,14 @@ MilitaryAttackManager.prototype.defence = function(gameState) {
 	}
 };
 
+// return count of enemy buildings for a given building class
+MilitaryAttackManager.prototype.getEnemyBuildings = function(gameState,cls) {
+	var targets = gameState.entities.filter(function(ent) {
+			return (gameState.isEntityEnemy(ent) && ent.hasClass("Structure") && ent.hasClass(cls) && ent.owner() !== 0);
+		});
+	return targets;
+};
+
 // return n available units and makes these units unavailable
 MilitaryAttackManager.prototype.getAvailableUnits = function(n) {
 	var ret = [];

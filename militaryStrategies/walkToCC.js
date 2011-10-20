@@ -46,7 +46,7 @@ WalkToCC.prototype.execute = function(gameState, militaryManager){
 		var list = militaryManager.getAvailableUnits(availableCount);
 		this.idList = this.idList.concat(list);
 		
-		var pending = EntityCollectionFromIds(gameState, this.list);
+		var pending = EntityCollectionFromIds(gameState, list);
 		
 		// Find the enemy CCs we could attack
 		var targets = gameState.entities.filter(function(ent) {

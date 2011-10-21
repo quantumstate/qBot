@@ -255,3 +255,21 @@ GameState.prototype.findResourceSupplies = function() {
 	});
 	return supplies;
 };
+
+
+GameState.prototype.getBuildLimits = function() {
+	return this.playerData.buildLimits;
+};
+
+GameState.prototype.getBuildCounts = function() {
+	return this.playerData.buildCounts;
+};
+
+GameState.prototype.isBuildLimitReached = function(category) {
+	if(this.playerData.buildLimits[category] === undefined || this.playerData.buildCounts[category] === undefined)
+		return false;
+	if(this.playerData.buildLimits[category].LimitsPerCivCentre != undefined)
+		return (this.playerData.buildCounts[category] >= this.playerData.buildCounts["CivilCentre"]*this.playerData.buildLimits[category].LimitPerCivCentre);
+	else
+		return (this.playerData.buildCounts[category] >= this.playerData.buildLimits[category]);
+};

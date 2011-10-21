@@ -412,7 +412,7 @@ MilitaryAttackManager.prototype.measureEnemyStrength = function(gameState){
 // Adds towers to the defenceBuilding queue
 MilitaryAttackManager.prototype.buildDefences = function(gameState, queues){ 
 	if (gameState.countEntitiesAndQueuedWithType(gameState.applyCiv('structures/{civ}_scout_tower'))
-			+ queues.defenceBuilding.totalLength() <= this.targetScoutTowers) {
+			+ queues.defenceBuilding.totalLength() <= gameState.getBuildLimits()["ScoutTower"]) {
 		queues.defenceBuilding.addItem(new BuildingConstructionPlan(gameState, 'structures/{civ}_scout_tower'));
 	}
 };

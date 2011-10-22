@@ -12,12 +12,20 @@ function Map(gameState, originalMap){
 	}
 }
 
-Map.createObstructionMap = function(gameState){
+Map.createObstructionMap = function(gameState, type){
 	var map = gameState.getMap();
 
 	var obstructionMask = gameState.getPassabilityClassMask("foundationObstruction");
 	// Only accept valid land tiles (we don't handle docks yet)
-	obstructionMask |= gameState.getPassabilityClassMask("building-land");
+	switch(type){
+		case "shore":
+			obstructionMask |= gameState.getPassabilityClassMask("building-shore");
+			break;
+		case "land":
+		default:
+			obstructionMask |= gameState.getPassabilityClassMask("building-land");
+			break;
+	}
 
 	var obstructionTiles = new Uint16Array(map.data.length);
 	for ( var i = 0; i < map.data.length; ++i){

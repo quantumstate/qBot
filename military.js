@@ -216,6 +216,7 @@ MilitaryAttackManager.prototype.getAvailableUnits = function(n) {
 		delete this.unassigned[i];
 		this.assigned[i] = true;
 		this.entity(i).setMetadata("role", "soldier");
+		this.entity(i).setMetadata("subrole", "unavailable");
 		count++;
 		if (count >= n) {
 			break;

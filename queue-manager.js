@@ -115,7 +115,7 @@ QueueManager.prototype.affordableToOutQueue = function(gameState) {
 		}
 	}
 	this.curItemQueue = tmpQueue;
-
+	
 	return availableRes;
 };
 
@@ -163,7 +163,7 @@ String.prototype.rpad = function(padString, length) {
 };
 
 QueueManager.prototype.printQueues = function(){
-	warn("OUTQUEUES");
+	debug("OUTQUEUES");
 	for (i in this.queues){
 		var qStr = "";
 		var q = this.queues[i];
@@ -173,11 +173,11 @@ QueueManager.prototype.printQueues = function(){
 				qStr += "x" + q.outQueue[j].number;
 		}
 		if (qStr != ""){
-			warn((i + ":").rpad(" ", 20) + qStr);
+			debug((i + ":").rpad(" ", 20) + qStr);
 		}
 	}
 	
-	warn("INQUEUES");
+	debug("INQUEUES");
 	for (i in this.queues){
 		var qStr = "";
 		var q = this.queues[i];
@@ -188,14 +188,17 @@ QueueManager.prototype.printQueues = function(){
 			qStr += "    ";
 		}
 		if (qStr != ""){
-			warn((i + ":").rpad(" ", 20) + qStr);
+			debug((i + ":").rpad(" ", 20) + qStr);
 		}
 	}
-	warn("Accounts: " + uneval(this.account));
+	debug("Accounts: " + uneval(this.account));
 };
 
 QueueManager.prototype.update = function(gameState) {
+	Engine.ProfileStart("Queue Manager");
 	//this.printQueues();
+	
+	Engine.ProfileStart("Pick items from queues");
 	// See if there is a high priority item from last time.
 	this.affordableToOutQueue(gameState);
 	do {
@@ -253,8 +256,10 @@ QueueManager.prototype.update = function(gameState) {
 		}
 
 		this.affordableToOutQueue(gameState);
-	} while (this.curItemQueue.length === 0)
+	} while (this.curItemQueue.length === 0);
+	Engine.ProfileStop();
 
+	Engine.ProfileStart("Execute items");
 	// Handle output queues by executing items where possible
 	for (p in this.queues) {
 		while (this.queues[p].outQueueLength() > 0) {
@@ -279,5 +284,6 @@ QueueManager.prototype.update = function(gameState) {
 			}
 		}
 	}
-	//warn(uneval(this.futureNeeds(gameState)));
+	Engine.ProfileStop();
+	Engine.ProfileStop();
 };

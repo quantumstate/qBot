@@ -74,6 +74,9 @@ MilitaryAttackManager.prototype.init = function(gameState) {
 	for (var i in this.uSiege){
 		this.uSiege[i] = gameState.applyCiv(this.uSiege[i]);
 	}
+	
+	var filter = Filters.and(Filters.isEnemy(), Filters.byClassesOr(["CitizenSoldier", "Super"]));
+	this.enemySoldiers = new EntityCollection(gameState.ai, gameState.entities._entities, filter, gameState);
 };
 
 
@@ -356,6 +359,10 @@ MilitaryAttackManager.prototype.measureAvailableStrength = function(){
 		}
 	}
 	return strength;
+};
+
+MilitaryAttackManager.prototype.getEnemySoldiers = function(gameState){
+	return this.enemySoldiers;
 };
 
 // Returns the number of units in the largest enemy army

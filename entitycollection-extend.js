@@ -13,7 +13,7 @@ EntityCollection.prototype.attack = function(unit)
 
 function EntityCollectionFromIds(gameState, idList){
 	var ents = {};
-	for (i in idList){
+	for (var i in idList){
 		var id = idList[i];
 		if (gameState.entities._entities[id]) {
 			ents[id] = gameState.entities._entities[id];
@@ -21,3 +21,64 @@ function EntityCollectionFromIds(gameState, idList){
 	}
 	return new EntityCollection(gameState.ai, ents);
 }
+
+EntityCollection.prototype.attackMove = function(x, z){
+	Engine.PostCommand({"type": "attack-move", "entities": this.toIdArray(), "x": x, "z": z, "queued": false});
+	return this;
+};
+
+// Do naughty stuff to replace the entity collection constructor
+var tmpEntityCollection = function(baseAI, entities, filter, gameState){
+	this._ai = baseAI;
+	this._entities = entities;
+	if (filter){
+		var tmp = 3;
+		this.filterFunc = filter;
+		this._entities = this.filter(function(ent){
+				return filter(ent, gameState);
+			})._entities;
+		this._ai.registerUpdate(this.update, this);
+	}
+
+	// Compute length lazily on demand, since it can be
+	// expensive for large collections
+	// This is updated by the update() function. 
+	this._length = undefined;
+	Object.defineProperty(this, "length", {
+		get: function () {
+			if (this._length === undefined)
+			{
+				this._length = 0;
+				for (var id in entities)
+					++this._length;
+			}
+			return this._length;
+		}
+	});
+};
+
+tmpEntityCollection.prototype = new EntityCollection;
+EntityCollection = tmpEntityCollection;
+
+// Keeps an EntityCollection with a filter function up to date by watching for events
+EntityCollection.prototype.update = function(gameState, events){
+	if (!this.filterFunc)
+		return;
+	for (var i in events){
+		if (events[i].type === "Create"){
+			var raw_ent = gameState.getEntityById(events[i].msg.entity);
+			var ent = new Entity(this._ai, raw_ent);
+			if (ent && this.filterFunc(ent, gameState)){
+				this._entities[events[i].msg.entity] = raw_ent;
+				if (this._length !== undefined)
+					this._length ++;
+			}
+		}else if(events[i].type === "Destroy"){
+			if (this._entities[events[i].msg.entity]){
+				delete this._entities[events[i].msg.entity];
+				if (this._length !== undefined)
+					this._length --;
+			}
+		}
+	}
+};

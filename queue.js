@@ -64,7 +64,7 @@ Queue.prototype.length = function() {
 
 Queue.prototype.countQueuedUnits = function(){
 	var count = 0;
-	for (i in this.queue){
+	for (var i in this.queue){
 		count += this.queue[i].number;
 	}
 	return count;
@@ -72,7 +72,7 @@ Queue.prototype.countQueuedUnits = function(){
 
 Queue.prototype.countOutQueuedUnits = function(){
 	var count = 0;
-	for (i in this.outQueue){
+	for (var i in this.outQueue){
 		count += this.outQueue[i].number;
 	}
 	return count;
@@ -80,10 +80,10 @@ Queue.prototype.countOutQueuedUnits = function(){
 
 Queue.prototype.countTotalQueuedUnits = function(){
 	var count = 0;
-	for (i in this.queue){
+	for (var i in this.queue){
 		count += this.queue[i].number;
 	}
-	for (i in this.outQueue){
+	for (var i in this.outQueue){
 		count += this.outQueue[i].number;
 	}
 	return count;

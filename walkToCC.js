@@ -27,7 +27,7 @@ WalkToCC.prototype.execute = function(gameState, militaryManager){
 			removeList.push(id);
 		}
 	}
-	for (i in removeList){
+	for (var i in removeList){
 		this.idList.splice(this.idList.indexOf(removeList[i]),1);
 	}
 	

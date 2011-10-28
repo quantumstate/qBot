@@ -65,16 +65,15 @@ MilitaryAttackManager.prototype.init = function(gameState) {
 		this.bAdvanced = this.bCivAdvanced[civ];
 	}
 	
-	for (i in this.uCitizenSoldier){
+	for (var i in this.uCitizenSoldier){
 		this.uCitizenSoldier[i] = gameState.applyCiv(this.uCitizenSoldier[i]);
 	}
-	for (i in this.uAdvanced){
+	for (var i in this.uAdvanced){
 		this.uAdvanced[i] = gameState.applyCiv(this.uAdvanced[i]);
 	}
-	for (i in this.uSiege){
+	for (var i in this.uSiege){
 		this.uSiege[i] = gameState.applyCiv(this.uSiege[i]);
 	}
-	
 };
 
 
@@ -86,7 +85,7 @@ MilitaryAttackManager.prototype.findTrainableUnits = function(gameState, soldier
 	var ret = [];
 	gameState.getOwnEntities().forEach(function(ent) {
 		var trainable = ent.trainableEntities();
-		for (i in trainable){
+		for (var i in trainable){
 			if (soldierTypes.indexOf(trainable[i]) !== -1){
 				if (ret.indexOf(trainable[i]) === -1){
 					ret.push(trainable[i]);
@@ -173,7 +172,7 @@ MilitaryAttackManager.prototype.defence = function(gameState) {
 
 	delete this.enemyAttackers;
 	this.enemyAttackers = {};
-	for (i in nearby) {
+	for (var i in nearby) {
 		this.enemyAttackers[nearby[i]] = true;
 	}
 
@@ -189,7 +188,7 @@ MilitaryAttackManager.prototype.defence = function(gameState) {
 					"queued" : false
 				});
 				ent.setMetadata("attackers", tasked);
-				for (i in tasked) {
+				for (var i in tasked) {
 					this.entity(tasked[i]).setMetadata("attacking", id);
 				}
 			} else {
@@ -211,7 +210,7 @@ MilitaryAttackManager.prototype.getEnemyBuildings = function(gameState,cls) {
 MilitaryAttackManager.prototype.getAvailableUnits = function(n) {
 	var ret = [];
 	var count = 0;
-	for (i in this.unassigned) {
+	for (var i in this.unassigned) {
 		ret.push(+i);
 		delete this.unassigned[i];
 		this.assigned[i] = true;
@@ -233,7 +232,7 @@ MilitaryAttackManager.prototype.unassignUnit = function(unit){
 
 // Takes an array of unit id's and marks all of them unassigned 
 MilitaryAttackManager.prototype.unassignUnits = function(units){
-	for (i in units){
+	for (var i in units){
 		this.unassigned[unit[i]] = true;
 		this.assigned[unit[i]] = false;
 	}
@@ -241,7 +240,7 @@ MilitaryAttackManager.prototype.unassignUnits = function(units){
 
 MilitaryAttackManager.prototype.countAvailableUnits = function(){
 	var count = 0;
-	for (i in this.unassigned){
+	for (var i in this.unassigned){
 		if (this.unassigned[i]){
 			count += 1;
 		}
@@ -250,7 +249,7 @@ MilitaryAttackManager.prototype.countAvailableUnits = function(){
 };
 
 MilitaryAttackManager.prototype.handleEvents = function(gameState, events) {
-	for (i in events) {
+	for (var i in events) {
 		var e = events[i];
 
 		if (e.type === "Destroy") {
@@ -268,7 +267,7 @@ MilitaryAttackManager.prototype.handleEvents = function(gameState, events) {
 				}
 			}
 			if (metadata && metadata.attackers){
-				for (i in metadata.attackers){
+				for (var i in metadata.attackers){
 					var attacker = this.entity(metadata.attackers[i]);
 					if (attacker){
 						attacker.deleteMetadata('attacking');
@@ -351,7 +350,7 @@ MilitaryAttackManager.prototype.getUnitStrength = function(ent){
 // Returns the  strength of the available units of ai army
 MilitaryAttackManager.prototype.measureAvailableStrength = function(){
 	var  strength = 0.0;
-	for (i in this.unassigned){
+	for (var i in this.unassigned){
 		if (this.unassigned[i]){
 			strength += this.getUnitStrength(this.entity(i));
 		}
@@ -468,7 +467,7 @@ MilitaryAttackManager.prototype.update = function(gameState, queues, events) {
 	if (gameState.countEntitiesWithType(gameState.applyCiv("units/{civ}_support_female_citizen")) > 
 			gameState.ai.modules[0].targetNumWorkers * 0.8){
 		if (queues.militaryBuilding.totalLength() === 0){
-			for (i in this.bAdvanced){
+			for (var i in this.bAdvanced){
 				if (gameState.countEntitiesAndQueuedWithType(gameState.applyCiv(this.bAdvanced[i])) < 1){
 					queues.militaryBuilding.addItem(new BuildingConstructionPlan(gameState, this.bAdvanced[i]));
 				}
@@ -479,7 +478,7 @@ MilitaryAttackManager.prototype.update = function(gameState, queues, events) {
 	this.attackManager.execute(gameState, this);
 	
 	// Set unassigned to be workers
-	for (i in this.unassigned){
+	for (var i in this.unassigned){
 		if (this.entity(i).hasClass("CitizenSoldier") && ! this.entity(i).hasClass("Cavalry")){
 			this.entity(i).setMetadata("role", "worker");
 		}

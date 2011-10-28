@@ -102,9 +102,9 @@ GameState.prototype.isEntityOwn = function(ent) {
 	return false;
 };
 
-GameState.prototype.getOwnEntities = (function() {
+GameState.prototype.getOwnEntities = function() {
 	return new EntityCollection(this.ai, this.ai._ownEntities);
-}),
+};
 
 GameState.prototype.getOwnEntitiesWithRole = Memoize('getOwnEntitiesWithRole', function(role) {
 	var metas = this.ai._entityMetadata;
@@ -250,7 +250,7 @@ GameState.prototype.findResourceSupplies = function() {
 			"entity" : ent,
 			"amount" : amount,
 			"type" : type,
-			"position" : ent.position(),
+			"position" : ent.position()
 		});
 	});
 	return supplies;

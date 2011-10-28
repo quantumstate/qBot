@@ -128,7 +128,7 @@ QueueManager.prototype.onlyUsesSpareAndUpdateSpare = function(unitCost, spare){
 		food: Math.max(0, spare.food - 500),
 		wood: Math.max(0, spare.wood - 500),
 		stone: Math.max(0, spare.stone - 500),
-		metal: Math.max(0, spare.metal - 500),
+		metal: Math.max(0, spare.metal - 500)
 	};
 	var spareNonNeg = new Resources(spareNonNegRes);
 	var ret = false;
@@ -164,7 +164,7 @@ String.prototype.rpad = function(padString, length) {
 
 QueueManager.prototype.printQueues = function(){
 	debug("OUTQUEUES");
-	for (i in this.queues){
+	for (var i = 0; i < this.queues.length; i++){
 		var qStr = "";
 		var q = this.queues[i];
 		for (j in q.outQueue){
@@ -178,7 +178,7 @@ QueueManager.prototype.printQueues = function(){
 	}
 	
 	debug("INQUEUES");
-	for (i in this.queues){
+	for (var i = 0; i < this.queues.length; i++){
 		var qStr = "";
 		var q = this.queues[i];
 		for (j in q.queue){

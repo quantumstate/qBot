@@ -106,6 +106,14 @@ GameState.prototype.getOwnEntities = function() {
 	return new EntityCollection(this.ai, this.ai._ownEntities);
 };
 
+GameState.prototype.getEntities = function() {
+	return this.entities;
+};
+
+GameState.prototype.getEntityById = function(id){
+	return this.entities._entities[id];
+};
+
 GameState.prototype.getOwnEntitiesWithRole = Memoize('getOwnEntitiesWithRole', function(role) {
 	var metas = this.ai._entityMetadata;
 	if (role === undefined)

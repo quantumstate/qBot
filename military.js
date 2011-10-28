@@ -157,10 +157,11 @@ MilitaryAttackManager.prototype.defence = function(gameState) {
 	var defenceRange = 200; // just beyond town centres territory influence
 	var nearby = [];
 	var defendersPerAttacker = 3;
+	var self = this;
 
 	myCivCentres.forEach(function(ent) {
 		var pos = ent.position();
-		gameState.entities.forEach(function(ent) {
+		self.getEnemySoldiers(gameState).forEach(function(ent) {
 			if (gameState.playerData.isEnemy[ent.owner()]
 					&& (ent.hasClass("CitizenSoldier") || ent.hasClass("Super"))
 					&& ent.position()) {
@@ -371,21 +372,18 @@ MilitaryAttackManager.prototype.measureEnemyCount = function(gameState){
 	var isEnemy = gameState.playerData.isEnemy;
 	var enemyCount = [];
 	var maxCount = 0;
-	//loop through every player then look for their soldiers if they are an enemy
 	for ( var i = 1; i < isEnemy.length; i++) {
-		if (isEnemy[i]) {
-			var count = 0;
-			gameState.entities.forEach(function(ent) {
-				if (ent.owner() === i && (ent.hasClass("CitizenSoldier") || ent.hasClass("Super"))) {
-					count++;
-				}
-			});
-			enemyCount[i] = count;
-			if (count > maxCount) {
-				maxCount = count;
-			}
-		}
+		enemyCount[i] = 0;
 	}
+	
+	// Loop through the enemy soldiers and add one to the count for that soldiers player's count
+	this.enemySoldiers.forEach(function(ent) {
+		enemyCount[ent.owner()]++;
+		
+		if (enemyCount[ent.owner()] > maxCount) {
+			maxCount = enemyCount[ent.owner()];
+		}
+	});
 	
 	return maxCount;
 };
@@ -397,21 +395,19 @@ MilitaryAttackManager.prototype.measureEnemyStrength = function(gameState){
 	var enemyStrength = [];
 	var maxStrength = 0;
 	var self = this;
-	//loop through every player then look for their soldiers if they are an enemy
+	
 	for ( var i = 1; i < isEnemy.length; i++) {
-		if (isEnemy[i]) {
-			var strength = 0.0;
-			gameState.entities.forEach(function(ent) {
-				if (ent.owner() === i && (ent.hasClass("CitizenSoldier") || ent.hasClass("Super"))) {
-					strength += self.getUnitStrength(ent);
-				}
-			});
-			enemyStrength[i] = strength;
-			if (strength > maxStrength) {
-				maxStrength = strength;
-			}
-		}
+		enemyStrength[i] = 0;
 	}
+	
+	// Loop through the enemy soldiers and add the strength to that soldiers player's total strength
+	this.enemySoldiers.forEach(function(ent) {
+		enemyStrength[ent.owner()] += self.getUnitStrength(ent);
+		
+		if (enemyStrength[ent.owner()] > maxStrength) {
+			maxStrength = enemyStrength[ent.owner()];
+		}
+	});
 	
 	return maxStrength;
 };

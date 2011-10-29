@@ -12,12 +12,30 @@ function Map(gameState, originalMap){
 	}
 }
 
-Map.createObstructionMap = function(gameState, type){
-	var map = gameState.getMap();
+Map.createObstructionMap = function(gameState, template){
+	var passabilityMap = gameState.getMap();
+	var territoryMap = gameState.getTerritoryMap(); 
+	
+	const TERRITORY_PLAYER_MASK = 0x7F;
+	
+	// default values
+	var placementType = "land";
+	var buildOwn = true;
+	var buildAlly = true;
+	var buildNeutral = true;
+	var buildEnemy = false;
+	// If there is a template then replace the defaults
+	if (template){
+		placementType = template.buildPlacementType();
+		buildOwn = template.hasBuildTerritory("own"); 
+		buildAlly = template.hasBuildTerritory("ally"); 
+		buildNeutral = template.hasBuildTerritory("neutral"); 
+		buildEnemy = template.hasBuildTerritory("enemy");
+	}
 
 	var obstructionMask = gameState.getPassabilityClassMask("foundationObstruction");
 	// Only accept valid land tiles (we don't handle docks yet)
-	switch(type){
+	switch(placementType){
 		case "shore":
 			obstructionMask |= gameState.getPassabilityClassMask("building-shore");
 			break;
@@ -26,10 +44,20 @@ Map.createObstructionMap = function(gameState, type){
 			obstructionMask |= gameState.getPassabilityClassMask("building-land");
 			break;
 	}
-
-	var obstructionTiles = new Uint16Array(map.data.length);
-	for ( var i = 0; i < map.data.length; ++i){
-		obstructionTiles[i] = (map.data[i] & obstructionMask) ? 0 : 65535;
+	
+	var playerID = gameState.getPlayerID();  
+	
+	var obstructionTiles = new Uint16Array(passabilityMap.data.length); 
+	for (var i = 0; i < passabilityMap.data.length; ++i) 
+	{
+		var tilePlayer = (territoryMap.data[i] & TERRITORY_PLAYER_MASK); 
+		var invalidTerritory = ( 
+			(!buildOwn && tilePlayer == playerID) || 
+			(!buildAlly && gameState.isPlayerAlly(tilePlayer) && tilePlayer != playerID) || 
+			(!buildNeutral && tilePlayer == 0) || 
+			(!buildEnemy && gameState.isPlayerEnemy(tilePlayer) && tilePlayer !=0) 
+		); 
+		obstructionTiles[i] = (invalidTerritory || (passabilityMap.data[i] & obstructionMask)) ? 0 : 65535; 
 	}
 	
 	return new Map(gameState, obstructionTiles);

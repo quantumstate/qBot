@@ -38,11 +38,11 @@ GameState.prototype.getResources = function() {
 };
 
 GameState.prototype.getMap = function() {
-	if (this.ai.map){
-		return this.ai.map;
-	}else{
-		return this.ai.passabilityMap;
-	}
+	return this.ai.passabilityMap;
+};
+
+GameState.prototype.getTerritoryMap = function() {
+	return this.ai.territoryMap;
 };
 
 GameState.prototype.getPopulation = function() {

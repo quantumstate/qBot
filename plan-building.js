@@ -49,12 +49,12 @@ BuildingConstructionPlan.prototype.findGoodPosition = function(gameState) {
 
 	// First, find all tiles that are far enough away from obstructions:
 
-	var obstructionMap = Map.createObstructionMap(gameState,template.buildPlacementType());
+	var obstructionMap = Map.createObstructionMap(gameState,template);
 	// Engine.DumpImage("tiles0.png", obstructionTiles, map.width,
 	// map.height, 64);
 
 	obstructionMap.expandInfluences();
-
+	
 	// Compute each tile's closeness to friendly structures:
 
 	var friendlyTiles = new Map(gameState);

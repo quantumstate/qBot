@@ -37,7 +37,7 @@ var tmpEntityCollection = function(baseAI, entities, filter, gameState){
 		this._entities = this.filter(function(ent){
 				return filter(ent, gameState);
 			})._entities;
-		this._ai.registerUpdate(this.update, this);
+		this._ai.registerUpdate(this);
 	}
 
 	// Compute length lazily on demand, since it can be
@@ -67,11 +67,13 @@ EntityCollection.prototype.update = function(gameState, events){
 	for (var i in events){
 		if (events[i].type === "Create"){
 			var raw_ent = gameState.getEntityById(events[i].msg.entity);
-			var ent = new Entity(this._ai, raw_ent);
-			if (ent && this.filterFunc(ent, gameState)){
-				this._entities[events[i].msg.entity] = raw_ent;
-				if (this._length !== undefined)
-					this._length ++;
+			if (raw_ent){
+				var ent = new Entity(this._ai, raw_ent);
+				if (ent && this.filterFunc(ent, gameState)){
+					this._entities[events[i].msg.entity] = raw_ent;
+					if (this._length !== undefined)
+						this._length ++;
+				}
 			}
 		}else if(events[i].type === "Destroy"){
 			if (this._entities[events[i].msg.entity]){

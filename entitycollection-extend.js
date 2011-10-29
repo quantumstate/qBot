@@ -66,9 +66,9 @@ EntityCollection.prototype.update = function(gameState, events){
 		return;
 	for (var i in events){
 		if (events[i].type === "Create"){
-			var raw_ent = gameState.getEntityById(events[i].msg.entity);
-			if (raw_ent){
-				var ent = new Entity(this._ai, raw_ent);
+			var ent = gameState.getEntityById(events[i].msg.entity);
+			if (ent){
+				var raw_ent = ent._entity;
 				if (ent && this.filterFunc(ent, gameState)){
 					this._entities[events[i].msg.entity] = raw_ent;
 					if (this._length !== undefined)

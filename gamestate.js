@@ -111,7 +111,12 @@ GameState.prototype.getEntities = function() {
 };
 
 GameState.prototype.getEntityById = function(id){
-	return this.entities._entities[id];
+	if (this.entities._entities[id]) {
+		return new Entity(this.ai, this.entities._entities[id]);
+	}else{
+		debug("Entity " + id + " requested does not exist");
+	}
+	return false;
 };
 
 GameState.prototype.getOwnEntitiesWithRole = Memoize('getOwnEntitiesWithRole', function(role) {

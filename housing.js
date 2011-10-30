@@ -6,7 +6,8 @@ var HousingManager = function() {
 HousingManager.prototype.buildMoreHouses = function(gameState, queues) {
 	// temporary 'remaining population space' based check, need to do
 	// predictive in future
-	if (gameState.getPopulationLimit() - gameState.getPopulation() < 20) {
+	if (gameState.getPopulationLimit() - gameState.getPopulation() < 20
+			&& gameState.getPopulationLimit() < gameState.getPopulationMax()) {
 		var numConstructing = gameState.countEntitiesWithType(gameState.applyCiv("foundation|structures/{civ}_house"));
 		var numPlanned = queues.house.totalLength();
 

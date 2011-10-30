@@ -9,7 +9,6 @@
 var MilitaryAttackManager = function() {
 	this.targetSquadSize = 10;
 	this.targetScoutTowers = 10;
-	this.squadTypes = [ "units/{civ}_infantry_spearman_b", "units/{civ}_infantry_javelinist_b" ];
 
 	// these use the structure soldiers[unitId] = true|false to register the
 	// units
@@ -17,6 +16,42 @@ var MilitaryAttackManager = function() {
 	this.assigned = {};
 	this.unassigned = {};
 
+	this.attackManagers = [WalkToCC];
+	this.availableAttacks = [];
+	this.currentAttacks = [];
+	
+	this.defineUnitsAndBuildings();
+};
+
+MilitaryAttackManager.prototype.init = function(gameState) {
+	var civ = gameState.playerData.civ;
+	if (civ in this.uCivCitizenSoldier) {
+		this.uCitizenSoldier = this.uCivCitizenSoldier[civ];
+		this.uAdvanced = this.uCivAdvanced[civ];
+		this.uSiege = this.uCivSiege[civ];
+
+		this.bAdvanced = this.bCivAdvanced[civ];
+	}
+	
+	for (var i in this.uCitizenSoldier){
+		this.uCitizenSoldier[i] = gameState.applyCiv(this.uCitizenSoldier[i]);
+	}
+	for (var i in this.uAdvanced){
+		this.uAdvanced[i] = gameState.applyCiv(this.uAdvanced[i]);
+	}
+	for (var i in this.uSiege){
+		this.uSiege[i] = gameState.applyCiv(this.uSiege[i]);
+	}
+	
+	for (var i in this.attackManagers){
+		this.availableAttacks[i] = new this.attackManagers[i](gameState, this);
+	}
+	
+	var filter = Filters.and(Filters.isEnemy(), Filters.byClassesOr(["CitizenSoldier", "Super"]));
+	this.enemySoldiers = new EntityCollection(gameState.ai, gameState.entities._entities, filter, gameState);
+};
+
+MilitaryAttackManager.prototype.defineUnitsAndBuildings = function(){
 	// units
 	this.uCivCitizenSoldier= {};
 	this.uCivAdvanced = {};
@@ -51,34 +86,7 @@ var MilitaryAttackManager = function() {
 	this.bCivAdvanced.cart = [ "structures/{civ}_fortress", "structures/{civ}_embassy_celtic", "structures/{civ}_embassy_iberian", "structures/{civ}_embassy_italiote" ];
 	this.bCivAdvanced.celt = [ "structures/{civ}_kennel", "structures/{civ}_fortress_b", "structures/{civ}_fortress_g" ];
 	this.bCivAdvanced.iber = [ "structures/{civ}_fortress" ];
-
-	this.attackManager = new WalkToCC();
 };
-
-MilitaryAttackManager.prototype.init = function(gameState) {
-	var civ = gameState.playerData.civ;
-	if (civ in this.uCivCitizenSoldier) {
-		this.uCitizenSoldier = this.uCivCitizenSoldier[civ];
-		this.uAdvanced = this.uCivAdvanced[civ];
-		this.uSiege = this.uCivSiege[civ];
-
-		this.bAdvanced = this.bCivAdvanced[civ];
-	}
-	
-	for (var i in this.uCitizenSoldier){
-		this.uCitizenSoldier[i] = gameState.applyCiv(this.uCitizenSoldier[i]);
-	}
-	for (var i in this.uAdvanced){
-		this.uAdvanced[i] = gameState.applyCiv(this.uAdvanced[i]);
-	}
-	for (var i in this.uSiege){
-		this.uSiege[i] = gameState.applyCiv(this.uSiege[i]);
-	}
-	
-	var filter = Filters.and(Filters.isEnemy(), Filters.byClassesOr(["CitizenSoldier", "Super"]));
-	this.enemySoldiers = new EntityCollection(gameState.ai, gameState.entities._entities, filter, gameState);
-};
-
 
 /**
  * @param (GameState) gameState
@@ -431,7 +439,7 @@ MilitaryAttackManager.prototype.update = function(gameState, queues, events) {
 	this.registerSoldiers(gameState);
 	this.defence(gameState);
 	this.buildDefences(gameState, queues);
-
+	
 	// Continually try training new units, in batches of 5
 	if (queues.citizenSoldier.length() < 6) {
 		var newUnit = this.findBestNewUnit(gameState, queues.citizenSoldier, this.uCitizenSoldier);
@@ -478,7 +486,18 @@ MilitaryAttackManager.prototype.update = function(gameState, queues, events) {
 		}
 	}
 	
-	this.attackManager.execute(gameState, this);
+	// Look for attack plans which can be executed
+	for (var i = 0; i < this.availableAttacks.length; i++){
+		if (this.availableAttacks[i].canExecute(gameState, this)){
+			this.availableAttacks[i].execute(gameState, this);
+			this.currentAttacks.push(this.availableAttacks[i]);
+			this.availableAttacks.splice(i, 1, new this.attackManagers[i](gameState, this));
+		}
+	}
+	// Keep current attacks updated
+	for (i in this.currentAttacks){
+		this.currentAttacks[i].update(gameState, this);
+	}
 	
 	// Set unassigned to be workers
 	for (var i in this.unassigned){

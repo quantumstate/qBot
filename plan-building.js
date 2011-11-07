@@ -34,6 +34,10 @@ BuildingConstructionPlan.prototype.execute = function(gameState) {
 	// some unit that can start the foundation
 
 	var pos = this.findGoodPosition(gameState);
+	if (!pos){
+		debug("No room to place " + this.type);
+		return;
+	}
 
 	builders[0].construct(this.type, pos.x, pos.z, pos.angle);
 };
@@ -96,7 +100,13 @@ BuildingConstructionPlan.prototype.findGoodPosition = function(gameState) {
 	var radius = Math.ceil(template.obstructionRadius() / cellSize) + 2;
 
 	// Find the best non-obstructed tile
-	var bestIdx = friendlyTiles.findBestTile(radius, obstructionMap)[0];
+	var bestTile = friendlyTiles.findBestTile(radius, obstructionMap);
+	var bestIdx = bestTile[0];
+	var bestVal = bestTile[1];
+	
+	if (bestVal === -1){
+		return false;
+	}
 	
 	var x = ((bestIdx % friendlyTiles.width) + 0.5) * cellSize;
 	var z = (Math.floor(bestIdx / friendlyTiles.width) + 0.5) * cellSize;

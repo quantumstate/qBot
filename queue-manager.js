@@ -164,10 +164,10 @@ String.prototype.rpad = function(padString, length) {
 
 QueueManager.prototype.printQueues = function(){
 	debug("OUTQUEUES");
-	for (var i = 0; i < this.queues.length; i++){
+	for (var i in this.queues){
 		var qStr = "";
 		var q = this.queues[i];
-		for (j in q.outQueue){
+		for (var j in q.outQueue){
 			qStr += q.outQueue[j].type + " ";
 			if (q.outQueue[j].number)
 				qStr += "x" + q.outQueue[j].number;
@@ -178,10 +178,10 @@ QueueManager.prototype.printQueues = function(){
 	}
 	
 	debug("INQUEUES");
-	for (var i = 0; i < this.queues.length; i++){
+	for (var i in this.queues){
 		var qStr = "";
 		var q = this.queues[i];
-		for (j in q.queue){
+		for (var j in q.queue){
 			qStr += q.queue[j].type + " ";
 			if (q.queue[j].number)
 				qStr += "x" + q.queue[j].number;
@@ -230,7 +230,8 @@ QueueManager.prototype.update = function(gameState) {
 		}
 
 		var availableRes = this.affordableToOutQueue(gameState);
-
+		
+		var allSpare = availableRes["food"] > 0 && availableRes["wood"] > 0 && availableRes["stone"] > 0 && availableRes["metal"] > 0;
 		// if there are no affordable items use any resources which aren't
 		// wanted by a higher priority item
 		if ((availableRes["food"] > 0 || availableRes["wood"] > 0 || availableRes["stone"] > 0 || availableRes["metal"] > 0)
@@ -244,11 +245,14 @@ QueueManager.prototype.update = function(gameState) {
 					}
 				}
 				if (this.onlyUsesSpareAndUpdateSpare(this.queues[ratioMinQueue].getNext().getCost(), availableRes)){
-					for (p in this.queues) {
-						this.account[p] += ratioMin * this.priorities[p];
+					if (allSpare){
+						for (p in this.queues) {
+							this.account[p] += ratioMin * this.priorities[p];
+						}
 					}
 					//this.account[ratioMinQueue] -= this.queues[ratioMinQueue].getNext().getCost().toInt();
 					this.curItemQueue.push(ratioMinQueue);
+					allSpare = availableRes["food"] > 0 && availableRes["wood"] > 0 && availableRes["stone"] > 0 && availableRes["metal"] > 0;
 				}
 				delete ratio[ratioMinQueue];
 			}

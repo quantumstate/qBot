@@ -1,6 +1,7 @@
 // TODO: Make this cope with negative cell values 
 
 function Map(gameState, originalMap){
+	// get the map to find out the correct dimensions
 	var gameMap = gameState.getMap();
 	this.width = gameMap.width;
 	this.height = gameMap.height;
@@ -72,7 +73,7 @@ Map.createTerritoryMap = function(gameState){
 
 	var obstructionTiles = new Uint16Array(map.data.length);
 	for ( var i = 0; i < map.data.length; ++i){
-		obstructionTiles[i] = map.data[i] & 15;
+		obstructionTiles[i] = map.data[i] & 0x7F;
 	}
 	
 	return new Map(gameState, obstructionTiles);

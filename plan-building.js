@@ -5,7 +5,7 @@ var BuildingConstructionPlan = function(gameState, type, position) {
 	var template = gameState.getTemplate(this.type);
 	if (!template) {
 		this.invalidTemplate = true;
-		warn("Cannot build " + this.type);
+		debug("Cannot build " + this.type);
 		return;
 	}
 	this.category = "building";
@@ -14,8 +14,9 @@ var BuildingConstructionPlan = function(gameState, type, position) {
 };
 
 BuildingConstructionPlan.prototype.canExecute = function(gameState) {
-	if (this.invalidTemplate)
+	if (this.invalidTemplate){
 		return false;
+	}
 
 	// TODO: verify numeric limits etc
 

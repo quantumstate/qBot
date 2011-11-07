@@ -185,8 +185,9 @@ EconomyManager.prototype.assignToFoundations = function(gameState) {
 	var foundations = gameState.findFoundations();
 
 	// Check if nothing to build
-	if (!foundations.length)
+	if (!foundations.length){
 		return;
+	}
 
 	var workers = gameState.getOwnEntitiesWithRole("worker");
 
@@ -196,8 +197,9 @@ EconomyManager.prototype.assignToFoundations = function(gameState) {
 
 	// Check if enough builders
 	var extraNeeded = this.targetNumBuilders - builderWorkers.length;
-	if (extraNeeded <= 0)
+	if (extraNeeded <= 0){
 		return;
+	}
 
 	// Pick non-builders who are closest to the first foundation,
 	// and tell them to start building it

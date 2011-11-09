@@ -13,7 +13,7 @@ EconomyManager.prototype.init = function(gameState){
 
 EconomyManager.prototype.trainMoreWorkers = function(gameState, queues) {
 	// Count the workers in the world and in progress
-	var numWorkers = gameState.countEntitiesAndQueuedWithRole("worker");
+	var numWorkers = gameState.countEntitiesAndQueuedWithType(gameState.applyCiv("units/{civ}_support_female_citizen"));
 	numWorkers += queues.villager.countTotalQueuedUnits();
 
 	// If we have too few, train more

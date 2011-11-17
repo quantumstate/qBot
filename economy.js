@@ -117,6 +117,10 @@ EconomyManager.prototype.reassignIdleWorkers = function(gameState) {
 		var resourceSupplies = gameState.findResourceSupplies();
 
 		idleWorkers.forEach(function(ent) {
+			// Check that the worker isn't garrisoned
+			if (ent.position() === undefined){
+				return;
+			}
 
 			var types = self.pickMostNeededResources(gameState);
 			for ( var typeKey in types) {
@@ -207,7 +211,8 @@ EconomyManager.prototype.assignToFoundations = function(gameState) {
 	var target = foundations.toEntityArray()[0];
 
 	var nonBuilderWorkers = workers.filter(function(ent) {
-		return (ent.getMetadata("subrole") !== "builder");
+		// check position so garrisoned units aren't tasked
+		return (ent.getMetadata("subrole") !== "builder" && ent.position() !== undefined);
 	});
 
 	var nearestNonBuilders = nonBuilderWorkers.filterNearest(target.position(), extraNeeded);

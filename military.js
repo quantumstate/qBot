@@ -238,7 +238,7 @@ MilitaryAttackManager.prototype.assignDefenders = function(gameState,target) {
 
 // Ungarrisons all units
 MilitaryAttackManager.prototype.ungarrisonAll = function(gameState) {
-	debug("ungarrison units ");
+	debug("ungarrison units");
 	
 	this.getGarrisonBuildings(gameState).forEach(function(bldg){
 		bldg.unloadAll();
@@ -262,7 +262,7 @@ MilitaryAttackManager.prototype.garrisonCitizens = function(gameState) {
 		// Look for workers which have a position (i.e. not garrisoned)
 		if(ent.hasClass("Worker") && ent.position()) {
 			for (id in self.enemyAttackers) {
-				if(self.entity(id).visionRange()*self.entity(id).visionRange() >= SquareVectorDistance(self.entity(id).position(),ent.position())) {
+				if(self.entity(id).visionRange() >= VectorDistance(self.entity(id).position(),ent.position())) {
 					debug(SquareVectorDistance(self.entity(id).position(),ent.position()));
 					dogarrison = true;
 					break;

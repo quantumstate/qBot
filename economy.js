@@ -418,9 +418,11 @@ EconomyManager.prototype.update = function(gameState, queues, events) {
 		this.setWorkersIdleByPriority(gameState);
 		this.setCount = 0;
 	}
-
+	
+	Engine.ProfileStart("Reassign Idle Workers");
 	this.reassignIdleWorkers(gameState);
-
+	Engine.ProfileStop();
+	
 	this.assignToFoundations(gameState);
 
 	Engine.ProfileStop();

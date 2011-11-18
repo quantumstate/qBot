@@ -392,6 +392,9 @@ EconomyManager.prototype.update = function(gameState, queues, events) {
 					var spot = this.getBestResourceBuildSpot(gameState, resource);
 					
 					var myCivCentres = gameState.getOwnEntities().filter(function(ent) {
+						if (!ent.hasClass("CivCentre") || ent.position() === undefined){
+							return false;
+						} 
 						var dx = (spot[0]-ent.position()[0]);
 						var dy = (spot[1]-ent.position()[1]);
 						var dist2 = dx*dx + dy*dy;

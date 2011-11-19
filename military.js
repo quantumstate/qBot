@@ -287,15 +287,24 @@ MilitaryAttackManager.prototype.garrisonSoldiers = function(gameState) {
 };
 
 MilitaryAttackManager.prototype.garrisonUnit = function(gameState,id) {
+	if (this.entity(id).position() === undefined){
+		return;
+	}
  	var garrisonBuildings = this.getGarrisonBuildings(gameState).toEntityArray();
+	var bldgDistance = [];
 	for (var i in garrisonBuildings) {
 		var bldg = garrisonBuildings[i];
-		if(bldg.garrisoned().length < bldg.garrisonMax()) {
-			this.entity(id).garrison(bldg);
-			this.garrisoned[id] = true;
-			this.entity(id).setMetadata("subrole","garrison");
-			break;
+		if(bldg.garrisoned().length <= bldg.garrisonMax()) {
+			bldgDistance.push([i,VectorDistance(bldg.position(),this.entity(id).position())]);
 		}
+	}
+	if(bldgDistance.length > 0) {
+		bldgDistance.sort(function(a,b) { return (a[1]-b[1]); });
+		var building = garrisonBuildings[bldgDistance[0][0]];
+		debug("garrison id "+id+"into building "+building.id()+"walking distance "+bldgDistance[0][1]);
+		this.entity(id).garrison(building);
+		this.garrisoned[id] = true;
+		this.entity(id).setMetadata("subrole","garrison");
 	}
 };
 

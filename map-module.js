@@ -11,7 +11,12 @@ function Map(gameState, originalMap){
 	}else{
 		this.map = new Uint16Array(this.length);
 	}
+	this.cellSize = gameState.cellSize;
 }
+
+Map.prototype.gamePosToMapPos = function(p){
+	return [Math.round(p[0]/this.cellSize), Math.round(p[1]/this.cellSize)];
+};
 
 Map.createObstructionMap = function(gameState, template){
 	var passabilityMap = gameState.getMap();

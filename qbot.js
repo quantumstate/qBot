@@ -53,6 +53,19 @@ QBotAI.prototype.runInit = function(gameState){
 				this.modules[i].init(gameState);
 			}
 		}
+
+		var myCivCentres = gameState.getOwnEntities().filter(function(ent) {
+			return ent.hasClass("CivCentre");
+		});
+		
+		var filter = Filters.and(Filters.isEnemy(), Filters.byClass("CivCentre"));
+		var enemyCivCentres = gameState.getEntities().filter(function(ent) {
+			return ent.hasClass("CivCentre") && gameState.isEntityEnemy(ent);
+		});
+		
+		this.accessibility = new Accessibility(gameState, myCivCentres.toEntityArray()[0].position());
+		debug(this.accessibility.isAccessible(enemyCivCentres.toEntityArray()[0].position()));
+		
 		this.firstTime = false;
 	}
 };
@@ -109,4 +122,13 @@ function debug(output){
 			warn(uneval(output));
 		}
 	}
+}
+
+function copyPrototype(descendant, parent) {  
+    var sConstructor = parent.toString();  
+    var aMatch = sConstructor.match( /\s*function (.*)\(/ );  
+    if ( aMatch != null ) { descendant.prototype[aMatch[1]] = parent; }  
+    for (var m in parent.prototype) {  
+        descendant.prototype[m] = parent.prototype[m];  
+    }  
 }

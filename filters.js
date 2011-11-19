@@ -41,5 +41,11 @@ var Filters = {
 		return function(ent, gameState){
 			return gameState.isEntityEnemy(ent);
 		};
+	},
+	
+	isSoldier: function(){
+		return function(ent){
+			return Filters.byClassesOr(["CitizenSoldier", "Super"])(ent);
+		};
 	}
 };

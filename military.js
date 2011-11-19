@@ -184,20 +184,28 @@ MilitaryAttackManager.prototype.defence = function(gameState) {
 	
 	var enemyAttackStrength = 0;
 	var availableStrength = this.measureAvailableStrength();
+	var garrisonedStrength = 0;
+	for (var i in this.garrisoned){
+		if (this.entity(i) !== undefined){
+			if (Filters.isSoldier()(this.entity(i))){
+				garrisonedStrength += this.getUnitStrength(this.entity(i));
+			}
+		}
+	}
 	
-	for (id in this.enemyAttackers) {
+	for (var id in this.enemyAttackers) {
 		var ent = new Entity(gameState.ai, ents[id]);
 		enemyAttackStrength+= this.getUnitStrength(ent);
 	}
 
-	if(2 * enemyAttackStrength < availableStrength) {
+	if(2 * enemyAttackStrength < availableStrength + garrisonedStrength) {
 		this.ungarrisonAll(gameState);
 		return;
 	} else {
 		this.garrisonCitizens(gameState);
 	}
 
-	if(enemyAttackStrength > availableStrength) {
+	if(enemyAttackStrength > availableStrength + garrisonedStrength) {
 		this.garrisonSoldiers(gameState);
 	}
 
@@ -274,7 +282,7 @@ MilitaryAttackManager.prototype.garrisonCitizens = function(gameState) {
 	});
 };
 
-//code for ungarrison all Soldiers
+// garrison the soldiers
 MilitaryAttackManager.prototype.garrisonSoldiers = function(gameState) {
 	debug("garrison Soldiers"); 
 	var units = this.getAvailableUnits(this.countAvailableUnits());
@@ -405,7 +413,7 @@ MilitaryAttackManager.prototype.entity = function(id) {
 	}else{
 		debug("Entity " + id + " requested does not exist");
 	}
-	return false;
+	return undefined;
 };
 
 // Returns the military strength of unit 

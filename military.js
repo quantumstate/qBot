@@ -164,8 +164,9 @@ MilitaryAttackManager.prototype.defence = function(gameState) {
 		return;
 
 	var defenceRange = 200; // just beyond town centres territory influence
-	var nearby = [];
 	var self = this;
+	
+	this.enemyAttackers = {};
 
 	myCivCentres.forEach(function(ent) {
 		var pos = ent.position();
@@ -173,35 +174,30 @@ MilitaryAttackManager.prototype.defence = function(gameState) {
 			if (gameState.playerData.isEnemy[ent.owner()]
 					&& (ent.hasClass("CitizenSoldier") || ent.hasClass("Super"))
 					&& ent.position()) {
-				var distSquared = (ent.position()[0] - pos[0]) * (ent.position()[0] - pos[0])
-						+ (ent.position()[1] - pos[1]) * (ent.position()[1] - pos[1]);
-				if (distSquared < defenceRange * defenceRange) {
-					nearby.push(ent.id());
+				var dist = VectorDistance(ent.position(), pos);
+				if (dist < defenceRange) {
+					self.enemyAttackers[ent.id()] = true;
 				}
 			}
 		});
 	});
-
-	delete this.enemyAttackers;
-	this.enemyAttackers = {};
-	this.enemyAttackStrength = 0;
-	for (var i in nearby) {
-		this.enemyAttackers[nearby[i]] = true;
+	
+	var enemyAttackStrength = 0;
+	var availableStrength = this.measureAvailableStrength();
+	
+	for (id in this.enemyAttackers) {
+		var ent = new Entity(gameState.ai, ents[id]);
+		enemyAttackStrength+= this.getUnitStrength(ent);
 	}
 
-	if(Object.keys(this.enemyAttackers).length == 0 ) {
+	if(2 * enemyAttackStrength < availableStrength) {
 		this.ungarrisonAll(gameState);
 		return;
 	} else {
 		this.garrisonCitizens(gameState);
 	}
 
-	for (id in this.enemyAttackers) {
-		var ent = new Entity(gameState.ai, ents[id]);
-		this.enemyAttackStrength+= this.getUnitStrength(ent);
-	}
-
-	if(this.enemyAttackStrength > this.measureAvailableStrength()) {
+	if(enemyAttackStrength > availableStrength) {
 		this.garrisonSoldiers(gameState);
 	}
 

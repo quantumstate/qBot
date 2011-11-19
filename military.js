@@ -248,7 +248,9 @@ MilitaryAttackManager.prototype.ungarrisonAll = function(gameState) {
 		if(this.assigned[i]) {
 			this.unassignUnit(i);
 		}
-		this.entity(i).setMetadata("sub-role","idle");
+		if (this.entity(i)){
+			this.entity(i).setMetadata("subrole","idle");
+		}
 	}
 	this.garrisoned = {};
 };
@@ -295,7 +297,7 @@ MilitaryAttackManager.prototype.garrisonUnit = function(gameState,id) {
 		if(bldg.garrisoned().length < bldg.garrisonMax()) {
 			this.entity(id).garrison(bldg);
 			this.garrisoned[id] = true;
-			this.entity(id).setMetadata("sub-role","garrison");
+			this.entity(id).setMetadata("subrole","garrison");
 			break;
 		}
 	}

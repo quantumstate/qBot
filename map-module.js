@@ -62,8 +62,9 @@ Map.createObstructionMap = function(gameState, template){
 			(!buildAlly && gameState.isPlayerAlly(tilePlayer) && tilePlayer != playerID) || 
 			(!buildNeutral && tilePlayer == 0) || 
 			(!buildEnemy && gameState.isPlayerEnemy(tilePlayer) && tilePlayer !=0) 
-		); 
-		obstructionTiles[i] = (invalidTerritory || (passabilityMap.data[i] & obstructionMask)) ? 0 : 65535; 
+		);
+		var tileAccessible = (gameState.ai.accessibility.map[i] == 1);
+		obstructionTiles[i] = (!tileAccessible || invalidTerritory || (passabilityMap.data[i] & obstructionMask)) ? 0 : 65535; 
 	}
 	
 	return new Map(gameState, obstructionTiles);

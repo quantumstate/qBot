@@ -264,9 +264,7 @@ MilitaryAttackManager.prototype.unassignDefenders = function(gameState, target){
 			var attacker = this.entity(ent.getMetadata().attackers[i]);
 			if (attacker){
 				attacker.deleteMetadata('attacking');
-				debug("Stop defence");
 				if (pos){
-					debug("Walk home");
 					attacker.move(pos[0], pos[1]);
 				}
 				this.unassignUnit(attacker.id());
@@ -421,7 +419,7 @@ MilitaryAttackManager.prototype.handleEvents = function(gameState, events) {
 			var metadata = e.msg.metadata[gameState.ai._player];
 			if (metadata && metadata.attacking){
 				var attacking = this.entity(metadata.attacking);
-				if (attacking){
+				if (attacking && attacking.getMetadata('attackers')){
 					var attackers = attacking.getMetadata('attackers');
 					attackers.splice(attackers.indexOf(metadata.attacking), 1);
 					attacking.setMetadata('attackers', attackers);
@@ -430,7 +428,7 @@ MilitaryAttackManager.prototype.handleEvents = function(gameState, events) {
 			if (metadata && metadata.attackers){
 				for (var i in metadata.attackers){
 					var attacker = this.entity(metadata.attackers[i]);
-					if (attacker){
+					if (attacker && attacker.getMetadata('attacking')){
 						attacker.deleteMetadata('attacking');
 						this.unassignUnit(attacker.id());
 					}

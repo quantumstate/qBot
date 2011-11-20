@@ -16,6 +16,7 @@ var MilitaryAttackManager = function() {
 	this.assigned = {};
 	this.unassigned = {};
 	this.garrisoned = {};
+	this.enemyAttackers = {};
 
 	this.attackManagers = [WalkToCC];
 	this.availableAttacks = [];
@@ -166,7 +167,7 @@ MilitaryAttackManager.prototype.defence = function(gameState) {
 	var defenceRange = 200; // just beyond town centres territory influence
 	var self = this;
 	
-	this.enemyAttackers = {};
+	var newEnemyAttackers = {};
 
 	myCivCentres.forEach(function(ent) {
 		var pos = ent.position();
@@ -176,11 +177,19 @@ MilitaryAttackManager.prototype.defence = function(gameState) {
 					&& ent.position()) {
 				var dist = VectorDistance(ent.position(), pos);
 				if (dist < defenceRange) {
-					self.enemyAttackers[ent.id()] = true;
+					newEnemyAttackers[ent.id()] = true;
 				}
 			}
 		});
 	});
+	
+	for (var id in this.enemyAttackers){
+		if (!newEnemyAttackers[id]){
+			this.unassignDefenders(gameState, id);
+		}
+	}
+	
+	this.enemyAttackers = newEnemyAttackers;
 	
 	var enemyAttackStrength = 0;
 	var availableStrength = this.measureAvailableStrength();
@@ -240,6 +249,33 @@ MilitaryAttackManager.prototype.assignDefenders = function(gameState,target) {
 	return true;
 };
 
+MilitaryAttackManager.prototype.unassignDefenders = function(gameState, target){
+	var myCivCentres = gameState.getOwnEntities().filter(function(ent) {
+		return ent.hasClass("CivCentre");
+	}).toEntityArray();
+	var pos = undefined;
+	if (myCivCentres.length > 0 && myCivCentres[0].position()){
+		pos = myCivCentres[0].position();
+	}
+	
+	var ent = this.entity(target);
+	if (ent && ent.getMetadata() && ent.getMetadata().attackers){
+		for (var i in ent.metadata.attackers){
+			var attacker = this.entity(ent.getMetadata().attackers[i]);
+			if (attacker){
+				attacker.deleteMetadata('attacking');
+				debug("Stop defence");
+				if (pos){
+					debug("Walk home");
+					attacker.move(pos[0], pos[1]);
+				}
+				this.unassignUnit(attacker.id());
+			}
+		}
+		ent.deleteMetadata('attackers');
+	}
+};
+
 // Ungarrisons all units
 MilitaryAttackManager.prototype.ungarrisonAll = function(gameState) {
 	debug("ungarrison units");
@@ -269,7 +305,6 @@ MilitaryAttackManager.prototype.garrisonCitizens = function(gameState) {
 		if(ent.hasClass("Worker") && ent.position()) {
 			for (id in self.enemyAttackers) {
 				if(self.entity(id).visionRange() >= VectorDistance(self.entity(id).position(),ent.position())) {
-					debug(SquareVectorDistance(self.entity(id).position(),ent.position()));
 					dogarrison = true;
 					break;
 				}

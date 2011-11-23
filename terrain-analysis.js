@@ -145,15 +145,19 @@ TerrainAnalysis.prototype.countAttached = function(pos){
 		var cur = stack.pop();
 		used[cur[0] + " " + cur[1]] = true;
 		for (var i = 0; i < positions.length; i++){
-			var pos = positions[i];
-			var cell = cur[0]+pos[0] + w*(cur[1]+pos[1]);
+			var p = positions[i];
+			var cell = cur[0]+p[0] + w*(cur[1]+p[1]);
 			
 		}
 	}
 };
 
 /*
- * Accessibility Class
+ * Accessibility Class inherits from TerrainAnalysis
+ *  
+ * Determines whether there is a path from one point to another.  It is initialised with a single point (p1) and then 
+ * can efficiently determine if another point is reachable from p1.  Initialising the object is costly so it should be 
+ * cached.   
  */
 
 function Accessibility(gameState, location){
@@ -161,11 +165,14 @@ function Accessibility(gameState, location){
 	
 	var start = this.findClosestPassablePoint(this.gamePosToMapPos(location));
 	
+	// Put the value 1 in all accessible points on the map
 	this.floodFill(start);
 }
 
 copyPrototype(Accessibility, TerrainAnalysis);
 
+// Return true if the given point is accessible from the point given when initialising the Accessibility object. #
+// If the given point is impassable the closest passable point is used.
 Accessibility.prototype.isAccessible = function(position){
 	var s = this.findClosestPassablePoint(this.gamePosToMapPos(position));
 	
@@ -179,13 +186,12 @@ Accessibility.prototype.floodFill = function(start){
 	
 	// Holds the list of current points to work outwards from
 	var stack = [];
-	// We store the next level in its own stack
+	// We store new points to be added to the stack temporarily in here while we run through the current stack
 	var newStack = [];
-	// Relative positions or new cells from the current one.  We alternate between the adjacent 4 and 8 cells
-	// so that there is an average 1.5 distance for diagonals which is close to the actual sqrt(2) ~ 1.41
+	// Relative positions or new cells from the current one.
 	var positions = [[0,1], [0,-1], [1,0], [-1,0]];
 	
-	//Set the distance of the start point to be 1 to distinguish it from the impassable areas
+	// Set the start point to be accessible
 	map[start[0] + w*(start[1])] = 1;
 	stack.push(start);
 	

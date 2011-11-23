@@ -68,14 +68,16 @@ Map.createObstructionMap = function(gameState, template){
 	}
 	
 	var map = new Map(gameState, obstructionTiles);
-	if (template){
-		if (template.hasClass("CivCentre")){
+	if (template && template.buildDistance()){
+		var minDist = template.buildDistance().MinDistance;
+		var category = template.buildDistance().FromCategory;
+		if (minDist !== undefined && category !== undefined){
 			gameState.getOwnEntities().forEach(function(ent) {
-				var pos = ent.position();
-				var x = Math.round(pos[0] / gameState.cellSize);
-				var z = Math.round(pos[1] / gameState.cellSize);
-				if (ent.hasClass("CivCentre")){
-					map.addInfluence(x, z, 45, -65535, 'constant');
+				if (ent.buildCategory() === category && ent.position()){
+					var pos = ent.position();
+					var x = Math.round(pos[0] / gameState.cellSize);
+					var z = Math.round(pos[1] / gameState.cellSize);
+					map.addInfluence(x, z, minDist/gameState.cellSize, -65535, 'constant');
 				}
 			});
 		}

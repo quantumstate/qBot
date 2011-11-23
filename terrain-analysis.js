@@ -1,4 +1,10 @@
-// inherits from the map module (Map)
+/*
+ * TerrainAnalysis inherits from Map
+ * 
+ * This creates a suitable passability map for pathfinding units and provides the findClosestPassablePoint() function.
+ * This is intended to be a base object for the terrain analysis modules to inherit from. 
+ */ 
+
 function TerrainAnalysis(gameState){
 	var passabilityMap = gameState.getMap();
 
@@ -16,23 +22,7 @@ function TerrainAnalysis(gameState){
 
 copyPrototype(TerrainAnalysis, Map);
 
-TerrainAnalysis.prototype.getPaths = function(start, end){
-	var s = this.findClosestPassablePoint(this.gamePosToMapPos(start));
-	var e = this.findClosestPassablePoint(this.gamePosToMapPos(end));
-	
-	if (!s || !e){
-		return undefined;
-	}
-	
-	this.makeGradient(s,e);
-	
-	this.walkGradient(e);
-	
-	this.dumpIm("terrainanalysis.png", 511);
-	
-	return "placeHolder";
-};
-
+// Returns the (approximately) closest point which is passable by searching in a spiral pattern 
 TerrainAnalysis.prototype.findClosestPassablePoint = function(startPoint){
 	var w = this.width;
 	var p = startPoint;
@@ -60,7 +50,39 @@ TerrainAnalysis.prototype.findClosestPassablePoint = function(startPoint){
 	return undefined;
 };
 
-TerrainAnalysis.prototype.makeGradient = function(start, end){
+/*
+ * PathFinder inherits from TerrainAnalysis
+ *  
+ * Used to create a list of distinct paths between two points. 
+ * 
+ * Currently a WIP.
+ */
+
+
+function PathFinder(gameState){
+	this.TerrainAnalysis(gameState);
+}
+
+copyPrototype(PathFinder, TerrainAnalysis);
+
+PathFinder.prototype.getPaths = function(start, end){
+	var s = this.findClosestPassablePoint(this.gamePosToMapPos(start));
+	var e = this.findClosestPassablePoint(this.gamePosToMapPos(end));
+	
+	if (!s || !e){
+		return undefined;
+	}
+	
+	this.makeGradient(s,e);
+	
+	this.walkGradient(e);
+	
+	this.dumpIm("terrainanalysis.png", 511);
+	
+	return "placeHolder";
+};
+
+PathFinder.prototype.makeGradient = function(start, end){
 	var w = this.width;
 	var map = this.map;
 	
@@ -105,7 +127,7 @@ TerrainAnalysis.prototype.makeGradient = function(start, end){
 	
 };
 
-TerrainAnalysis.prototype.walkGradient = function(start){
+PathFinder.prototype.walkGradient = function(start){
 	var positions = [[0,1], [0,-1], [1,0], [-1,0], [1,1], [-1,-1], [1,-1], [-1,1]];
 	
 	var cur = start;
@@ -133,7 +155,7 @@ TerrainAnalysis.prototype.walkGradient = function(start){
 	return cur;
 };
 
-TerrainAnalysis.prototype.countAttached = function(pos){
+PathFinder.prototype.countAttached = function(pos){
 	var positions = [[0,1], [0,-1], [1,0], [-1,0]];
 	var w = this.width;
 	var val = this.map[pos[0] + w*pos[1]];
@@ -153,7 +175,7 @@ TerrainAnalysis.prototype.countAttached = function(pos){
 };
 
 /*
- * Accessibility Class inherits from TerrainAnalysis
+ * Accessibility inherits from TerrainAnalysis
  *  
  * Determines whether there is a path from one point to another.  It is initialised with a single point (p1) and then 
  * can efficiently determine if another point is reachable from p1.  Initialising the object is costly so it should be 

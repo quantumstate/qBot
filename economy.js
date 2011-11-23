@@ -297,12 +297,13 @@ EconomyManager.prototype.getBestResourceBuildSpot = function(gameState, resource
 	gameState.getOwnEntities().forEach(function(ent) {
 		// We want to build near a CC of ours
 		if (ent.hasClass("CivCentre")){
-			var infl = 90;
+			var infl = 200;
 
 			var pos = ent.position();
 			var x = Math.round(pos[0] / gameState.cellSize);
 			var z = Math.round(pos[1] / gameState.cellSize);
-			friendlyTiles.addInfluence(x, z, infl, 0.3 * infl);
+			friendlyTiles.addInfluence(x, z, infl, 0.1 * infl);
+			friendlyTiles.addInfluence(x, z, infl/2, 0.1 * infl);
 		}
 		// We don't want multiple dropsites at one spot so add a negative for all dropsites
 		if (ent.resourceDropsiteTypes() && ent.resourceDropsiteTypes().indexOf(resource) !== -1){
@@ -312,7 +313,7 @@ EconomyManager.prototype.getBestResourceBuildSpot = function(gameState, resource
 			var x = Math.round(pos[0] / gameState.cellSize);
 			var z = Math.round(pos[1] / gameState.cellSize);
 			
-			friendlyTiles.addInfluence(x, z, infl, -100, 'constant');
+			friendlyTiles.addInfluence(x, z, infl, -50, 'quadratic');
 		}
 	});
 	
@@ -398,7 +399,7 @@ EconomyManager.prototype.update = function(gameState, queues, events) {
 						var dx = (spot[0]-ent.position()[0]);
 						var dy = (spot[1]-ent.position()[1]);
 						var dist2 = dx*dx + dy*dy;
-						return (ent.hasClass("CivCentre") && dist2 < 190*190);
+						return (ent.hasClass("CivCentre") && dist2 < 180*180);
 					});
 					
 					if (myCivCentres.length === 0){

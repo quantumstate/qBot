@@ -67,7 +67,21 @@ Map.createObstructionMap = function(gameState, template){
 		obstructionTiles[i] = (!tileAccessible || invalidTerritory || (passabilityMap.data[i] & obstructionMask)) ? 0 : 65535; 
 	}
 	
-	return new Map(gameState, obstructionTiles);
+	var map = new Map(gameState, obstructionTiles);
+	if (template){
+		if (template.hasClass("CivCentre")){
+			gameState.getOwnEntities().forEach(function(ent) {
+				var pos = ent.position();
+				var x = Math.round(pos[0] / gameState.cellSize);
+				var z = Math.round(pos[1] / gameState.cellSize);
+				if (ent.hasClass("CivCentre")){
+					map.addInfluence(x, z, 45, -65535, 'constant');
+				}
+			});
+		}
+	}
+	
+	return map;
 };
 
 Map.createTerritoryMap = function(gameState){

@@ -84,3 +84,20 @@ EntityCollection.prototype.update = function(gameState, events){
 		}
 	}
 };
+
+EntityCollection.prototype.getCentrePosition = function(){
+	var sumPos = [0, 0];
+	var count = 0;
+	this.forEach(function(ent){
+		if (ent.position()){
+			sumPos[0] += ent.position()[0];
+			sumPos[1] += ent.position()[1];
+			count ++;
+		}
+	});
+	if (count === 0){
+		return undefined;
+	}else{
+		return [sumPos[0]/count, sumPos[1]/count];
+	}
+};

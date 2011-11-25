@@ -18,7 +18,7 @@ var MilitaryAttackManager = function() {
 	this.garrisoned = {};
 	this.enemyAttackers = {};
 
-	this.attackManagers = [WalkToCC];
+	this.attackManagers = [AttackMoveToCC];
 	this.availableAttacks = [];
 	this.currentAttacks = [];
 	
@@ -643,7 +643,7 @@ MilitaryAttackManager.prototype.update = function(gameState, queues, events) {
 	}
 	// Keep current attacks updated
 	for (i in this.currentAttacks){
-		this.currentAttacks[i].update(gameState, this);
+		this.currentAttacks[i].update(gameState, this, events);
 	}
 	
 	// Set unassigned to be workers

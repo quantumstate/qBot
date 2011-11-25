@@ -138,19 +138,28 @@ EconomyManager.prototype.reassignIdleWorkers = function(gameState) {
 				var supplies = [];
 				resourceSupplies[type].forEach(function(supply) {
 					// Skip targets that are too hard to hunt
-					if (supply.entity.isUnhuntable())
+					if (supply.entity.isUnhuntable()){
 						return;
+					}
 					
 					// And don't go for the bloody fish!
-					if (supply.entity.hasClass("SeaCreature"))
+					if (supply.entity.hasClass("SeaCreature")){
 						return;
+					}
+					
+					// Check we can actually reach the resource
+					if (!gameState.ai.accessibility.isAccessible(supply.position)){
+						return;
+					}
+					
 
 					var dist = VectorDistance(supply.position, workerPosition);
 
 					// Skip targets that are far too far away (e.g. in the
 					// enemy base)
-					if (dist > 512)
+					if (dist > 512){
 						return;
+					}
 
 					supplies.push({
 						dist : dist,

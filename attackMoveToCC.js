@@ -52,7 +52,7 @@ AttackMoveToCC.prototype.execute = function(gameState, militaryManager){
 
 	// If we have a target, move to it
 	if (targets.length) {
-		// Remove the pending role
+		// Add an attack role so the economic manager doesn't try and use them
 		pending.forEach(function(ent) {
 			ent.setMetadata("role", "attack");
 		});
@@ -112,7 +112,7 @@ AttackMoveToCC.prototype.update = function(gameState, militaryManager, events){
 	if (numUnits < 1) return;
 	var damageRate = -deltaHealth / deltaTime * 1000;
 	var centrePos = [sumPos[0]/numUnits, sumPos[1]/numUnits];
-	debug(damageRate);
+	
 	if ((damageRate / Math.sqrt(numUnits)) > 2){
 		if (this.state === "walking"){
 			var sumAttackerPos = [0,0];

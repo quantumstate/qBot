@@ -89,10 +89,6 @@ Map.createObstructionMap = function(gameState, template){
 Map.createTerritoryMap = function(gameState){
 	var map = gameState.ai.territoryMap;
 
-	//var obstructionMask = gameState.getPassabilityClassMask("foundationObstruction");
-	// Only accept valid land tiles (we don't handle docks yet)
-	//obstructionMask |= gameState.getPassabilityClassMask("building-land");
-
 	var obstructionTiles = new Uint16Array(map.data.length);
 	for ( var i = 0; i < map.data.length; ++i){
 		obstructionTiles[i] = map.data[i] & 0x7F;

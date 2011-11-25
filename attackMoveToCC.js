@@ -136,7 +136,7 @@ AttackMoveToCC.prototype.update = function(gameState, militaryManager, events){
 				var avgAttackerPos = [sumAttackerPos[0]/numAttackers, sumAttackerPos[1]/numAttackers];
 				var units = EntityCollectionFromIds(gameState, this.idList);
 				// move to halfway between current position and attackers position
-				units.move((avgAttackerPos[0] + centrePos[0])/2, (avgAttackerPos[1] + centrePos[1])/2);
+				units.move(centrePos[0], centrePos[1]);
 				this.state = "attacking";
 			}
 		}

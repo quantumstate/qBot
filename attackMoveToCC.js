@@ -79,7 +79,6 @@ AttackMoveToCC.prototype.execute = function(gameState, militaryManager){
 // Runs every turn after the attack is executed
 // This removes idle units from the attack
 AttackMoveToCC.prototype.update = function(gameState, militaryManager, events){
-	debug(this.path);
 	
 	// keep the list of units in good order by pruning ids with no corresponding entities (i.e. dead units)
 	var removeList = [];
@@ -104,7 +103,20 @@ AttackMoveToCC.prototype.update = function(gameState, militaryManager, events){
 		this.idList.splice(this.idList.indexOf(removeList[i]),1);
 	}
 	
+	var units = EntityCollectionFromIds(gameState, this.idList);
+	
 	if (this.path.length === 0){
+		var idleCount = 0;
+		var self = this;
+		units.forEach(function(ent){
+			if (ent.isIdle()){
+				if (ent.position() && VectorDistance(ent.position(), self.targetPos) > 30){
+					ent.move(self.targetPos[0], self.targetPos[1]);
+				}else{
+					militaryManager.unassignUnit(ent.id());
+				}
+			}
+		});
 		return;
 	}
 	
@@ -126,8 +138,6 @@ AttackMoveToCC.prototype.update = function(gameState, militaryManager, events){
 	if (numUnits < 1) return;
 	var damageRate = -deltaHealth / deltaTime * 1000;
 	var centrePos = [sumPos[0]/numUnits, sumPos[1]/numUnits];
-	
-	var units = EntityCollectionFromIds(gameState, this.idList);
 	
 	if ((damageRate / Math.sqrt(numUnits)) > 2){
 		if (this.state === "walking"){
@@ -157,13 +167,6 @@ AttackMoveToCC.prototype.update = function(gameState, militaryManager, events){
 		}
 	}else{
 		if (this.state === "attacking"){
-			
-			var idleCount = 0;
-			units.forEach(function(ent){
-				if (ent.isIdle()){
-					idleCount += 1;
-				}
-			});
 			//idle count currently disabled to see how well it works without it.
 			if (true || idleCount/this.idList.length > 0.8){
 				units.move(this.path[0][0], this.path[0][1]);

@@ -61,11 +61,13 @@ TerrainAnalysis.prototype.findClosestPassablePoint = function(startPoint){
 
 function PathFinder(gameState){
 	this.TerrainAnalysis(gameState);
+	
+	this.territoryMap = Map.createTerritoryMap(gameState);
 }
 
 copyPrototype(PathFinder, TerrainAnalysis);
 
-PathFinder.prototype.getPaths = function(start, end){
+PathFinder.prototype.getPaths = function(start, end, mode){
 	var s = this.findClosestPassablePoint(this.gamePosToMapPos(start));
 	var e = this.findClosestPassablePoint(this.gamePosToMapPos(end));
 	
@@ -73,13 +75,26 @@ PathFinder.prototype.getPaths = function(start, end){
 		return undefined;
 	}
 	
-	this.makeGradient(s,e);
+	var paths = [];
 	
-	this.walkGradient(e);
+	while (true){
+		this.makeGradient(s,e);
+		var curPath = this.walkGradient(e, mode);
+		if (curPath !== undefined){
+			paths.push(curPath);
+		}else{
+			break;
+		}
+		this.wipeGradient();
+	}
 	
 	this.dumpIm("terrainanalysis.png", 511);
 	
-	return "placeHolder";
+	if (paths.length > 0){
+		return paths;
+	}else{
+		return undefined;
+	}
 };
 
 PathFinder.prototype.makeGradient = function(start, end){
@@ -127,8 +142,24 @@ PathFinder.prototype.makeGradient = function(start, end){
 	
 };
 
-PathFinder.prototype.walkGradient = function(start){
+PathFinder.prototype.wipeGradient = function(){
+	for (var i = 0; i < this.length; i++){
+		if (this.map[i] > 0){
+			this.map[i] = 65535;
+		}
+	}
+};
+
+// Returns the path down a gradient from the start to the bottom of the gradient, returns a point for every 20 cells in normal mode
+PathFinder.prototype.walkGradient = function(start, mode){
 	var positions = [[0,1], [0,-1], [1,0], [-1,0], [1,1], [-1,-1], [1,-1], [-1,1]];
+	
+	var path = [[start[0]*this.cellSize, start[1]*this.cellSize]];
+	
+	var blockPoint = undefined;
+	var blockPlacementRadius = 45;
+	var blockRadius = 30;
+	var count = 0;
 	
 	var cur = start;
 	var w = this.width;
@@ -140,9 +171,15 @@ PathFinder.prototype.walkGradient = function(start){
 			var cell = cur[0]+pos[0] + w*(cur[1]+pos[1]);
 			if (cell >= 0 && cell < this.length && this.map[cell] > 0 &&  this.map[cell] < dist){
 				dist = this.map[cell];
-				this.map[cell] = 0xFFFF;
 				cur = [cur[0]+pos[0], cur[1]+pos[1]];
 				moved = true;
+				count++;
+				if (count === blockPlacementRadius){
+					blockPoint = cur;
+				}
+				if (count % 20 === 0){
+					path.unshift([cur[0]*this.cellSize, cur[1]*this.cellSize]);
+				}
 				break;
 			}
 		}
@@ -151,8 +188,17 @@ PathFinder.prototype.walkGradient = function(start){
 		}
 		moved = false;
 	}
-	
-	return cur;
+	if (blockPoint === undefined){
+		return undefined;
+	}
+	this.addInfluence(blockPoint[0], blockPoint[1], blockRadius, -10000, 'constant');
+	if (mode === 'entryPoints'){
+		// returns the point where the path enters the blockPlacementRadius
+		return blockPoint;
+	}else{
+		// return a path of points 20 squares apart on the route
+		return path;
+	}
 };
 
 PathFinder.prototype.countAttached = function(pos){

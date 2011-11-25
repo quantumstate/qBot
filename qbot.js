@@ -64,7 +64,9 @@ QBotAI.prototype.runInit = function(gameState){
 		});
 		
 		this.accessibility = new Accessibility(gameState, myCivCentres.toEntityArray()[0].position());
-		debug(this.accessibility.isAccessible(enemyCivCentres.toEntityArray()[0].position()));
+		
+		var pathFinder = new PathFinder(gameState);
+		this.pathsToMe = pathFinder.getPaths(enemyCivCentres.toEntityArray()[0].position(), myCivCentres.toEntityArray()[0].position(), 'entryPoints');
 		
 		this.firstTime = false;
 	}
@@ -102,6 +104,13 @@ QBotAI.prototype.OnUpdate = function() {
 		}
 		
 		this.queueManager.update(gameState);
+		
+		// Generate some entropy in the random numbers (against humans) until the engine gets random initialised numbers
+		// TODO: remove this when the engine gives a random seed
+		var n = this.savedEvents.length % 29;
+		for (var i = 0; i < n; i++){
+			Math.random();
+		}
 		
 		delete this.savedEvents;
 		this.savedEvents = [];

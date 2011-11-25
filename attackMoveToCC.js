@@ -49,6 +49,7 @@ AttackMoveToCC.prototype.execute = function(gameState, militaryManager){
 	if (targets.length == 0) {
 		targets = militaryManager.getEnemyBuildings(gameState,"Village");
 	}
+	
 
 	// If we have a target, move to it
 	if (targets.length) {
@@ -56,11 +57,18 @@ AttackMoveToCC.prototype.execute = function(gameState, militaryManager){
 		pending.forEach(function(ent) {
 			ent.setMetadata("role", "attack");
 		});
-
+		
+		var curPos = pending.getCentrePosition();
+		
 		var target = targets.toEntityArray()[0];
 		this.targetPos = target.position();
+		
+		var pathFinder = new PathFinder(gameState);
+		var pathsToEnemy = pathFinder.getPaths(curPos, this.targetPos);
+		var rand = Math.floor(Math.random() * pathsToEnemy.length);
+		this.path = pathsToEnemy[rand];
 
-		pending.move(this.targetPos[0], this.targetPos[1]);
+		pending.move(this.path[0][0], this.path[0][1]);
 	} else if (targets.length == 0 ) {
 		gameState.ai.gameFinished = true;
 	}
@@ -71,6 +79,8 @@ AttackMoveToCC.prototype.execute = function(gameState, militaryManager){
 // Runs every turn after the attack is executed
 // This removes idle units from the attack
 AttackMoveToCC.prototype.update = function(gameState, militaryManager, events){
+	debug(this.path);
+	
 	// keep the list of units in good order by pruning ids with no corresponding entities (i.e. dead units)
 	var removeList = [];
 	var sumPos = [0, 0];
@@ -94,6 +104,10 @@ AttackMoveToCC.prototype.update = function(gameState, militaryManager, events){
 		this.idList.splice(this.idList.indexOf(removeList[i]),1);
 	}
 	
+	if (this.path.length === 0){
+		return;
+	}
+	
 	var deltaHealth = 0;
 	var deltaTime = 1;
 	var time = gameState.getTimeElapsed();
@@ -112,6 +126,8 @@ AttackMoveToCC.prototype.update = function(gameState, militaryManager, events){
 	if (numUnits < 1) return;
 	var damageRate = -deltaHealth / deltaTime * 1000;
 	var centrePos = [sumPos[0]/numUnits, sumPos[1]/numUnits];
+	
+	var units = EntityCollectionFromIds(gameState, this.idList);
 	
 	if ((damageRate / Math.sqrt(numUnits)) > 2){
 		if (this.state === "walking"){
@@ -134,15 +150,14 @@ AttackMoveToCC.prototype.update = function(gameState, militaryManager, events){
 			}
 			if (numAttackers > 0){
 				var avgAttackerPos = [sumAttackerPos[0]/numAttackers, sumAttackerPos[1]/numAttackers];
-				var units = EntityCollectionFromIds(gameState, this.idList);
-				// move to halfway between current position and attackers position
+				// Stop moving
 				units.move(centrePos[0], centrePos[1]);
 				this.state = "attacking";
 			}
 		}
 	}else{
 		if (this.state === "attacking"){
-			var units = EntityCollectionFromIds(gameState, this.idList);
+			
 			var idleCount = 0;
 			units.forEach(function(ent){
 				if (ent.isIdle()){
@@ -151,8 +166,17 @@ AttackMoveToCC.prototype.update = function(gameState, militaryManager, events){
 			});
 			//idle count currently disabled to see how well it works without it.
 			if (true || idleCount/this.idList.length > 0.8){
-				units.move(this.targetPos[0], this.targetPos[1]);
+				units.move(this.path[0][0], this.path[0][1]);
 				this.state = "walking";
+			}
+		}
+	}
+	
+	if (this.state === "walking"){
+		if (VectorDistance(centrePos, this.path[0]) < 20){
+			this.path.shift();
+			if (this.path.length > 0){
+				units.move(this.path[0][0], this.path[0][1]);
 			}
 		}
 	}

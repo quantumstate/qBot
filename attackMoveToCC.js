@@ -142,7 +142,11 @@ AttackMoveToCC.prototype.update = function(gameState, militaryManager, events){
 		var ent = militaryManager.entity(id);
 		if (ent.isIdle()){
 			if (ent.position() && VectorDistance(ent.position(), centrePos) > 20){
-				ent.move(centrePos[0], centrePos[1]);
+				var dist = VectorDistance(ent.position(), centrePos);
+				var vector = [centrePos[0] - ent.position()[0], centrePos[1] - ent.position()[1]];
+				vector[0] *= 10/dist;
+				vector[1] *= 10/dist;
+				ent.move(centrePos[0] + vector[0], centrePos[1] + vector[1]);
 			}else{
 				idleCount++;
 			}
@@ -194,3 +198,4 @@ AttackMoveToCC.prototype.update = function(gameState, militaryManager, events){
 	this.previousTime = time;
 	this.previousHealth = totalHealth;
 };
+

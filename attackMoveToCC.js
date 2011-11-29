@@ -82,7 +82,6 @@ AttackMoveToCC.prototype.update = function(gameState, militaryManager, events){
 	
 	// keep the list of units in good order by pruning ids with no corresponding entities (i.e. dead units)
 	var removeList = [];
-	var sumPos = [0, 0];
 	var totalHealth = 0;
 	for (var idKey in this.idList){
 		var id = this.idList[idKey];
@@ -90,10 +89,6 @@ AttackMoveToCC.prototype.update = function(gameState, militaryManager, events){
 		if (ent === undefined){
 			removeList.push(id);
 		}else{
-			if (ent.position()){
-				sumPos[0] += ent.position()[0];
-				sumPos[1] += ent.position()[1];
-			}
 			if (ent.hitpoints()){
 				totalHealth += ent.hitpoints();
 			}
@@ -137,7 +132,22 @@ AttackMoveToCC.prototype.update = function(gameState, militaryManager, events){
 	var numUnits = this.idList.length;
 	if (numUnits < 1) return;
 	var damageRate = -deltaHealth / deltaTime * 1000;
-	var centrePos = [sumPos[0]/numUnits, sumPos[1]/numUnits];
+	var centrePos = units.getCentrePosition();
+	
+	
+	var idleCount = 0;
+	// Looks for idle units away from the formations centre
+	for (var idKey in this.idList){
+		var id = this.idList[idKey];
+		var ent = militaryManager.entity(id);
+		if (ent.isIdle()){
+			if (ent.position() && VectorDistance(ent.position(), centrePos) > 20){
+				ent.move(centrePos[0], centrePos[1]);
+			}else{
+				idleCount++;
+			}
+		}
+	}
 	
 	if ((damageRate / Math.sqrt(numUnits)) > 2){
 		if (this.state === "walking"){
@@ -167,16 +177,13 @@ AttackMoveToCC.prototype.update = function(gameState, militaryManager, events){
 		}
 	}else{
 		if (this.state === "attacking"){
-			//idle count currently disabled to see how well it works without it.
-			if (true || idleCount/this.idList.length > 0.8){
-				units.move(this.path[0][0], this.path[0][1]);
-				this.state = "walking";
-			}
+			units.move(this.path[0][0], this.path[0][1]);
+			this.state = "walking";
 		}
 	}
 	
 	if (this.state === "walking"){
-		if (VectorDistance(centrePos, this.path[0]) < 20){
+		if (VectorDistance(centrePos, this.path[0]) < 20 || idleCount/numUnits > 0.8){
 			this.path.shift();
 			if (this.path.length > 0){
 				units.move(this.path[0][0], this.path[0][1]);
@@ -186,6 +193,4 @@ AttackMoveToCC.prototype.update = function(gameState, militaryManager, events){
 	
 	this.previousTime = time;
 	this.previousHealth = totalHealth;
-	
-	debug(this.state);
 };

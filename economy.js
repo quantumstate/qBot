@@ -112,7 +112,9 @@ EconomyManager.prototype.reassignIdleWorkers = function(gameState) {
 	var idleWorkers = gameState.getOwnEntitiesWithRole("worker").filter(function(ent) {
 		return (ent.isIdle() || ent.getMetadata("subrole") === "idle");
 	});
-
+	
+	
+	
 	if (idleWorkers.length) {
 		var resourceSupplies = gameState.findResourceSupplies();
 
@@ -130,10 +132,21 @@ EconomyManager.prototype.reassignIdleWorkers = function(gameState) {
 					continue;
 
 				// Pick the closest one.
-				// TODO: we should care about distance to dropsites, not
-				// (just) to the worker,
-				// and gather rates of workers
-
+				// TODO: we should care about gather rates of workers
+				var nearestDropsite = undefined;
+				var minDropsiteDist = Math.min(); // set to infinity initially
+				gameState.getOwnEntities().forEach(function(dropsiteEnt) {
+					if (dropsiteEnt.resourceDropsiteTypes() && dropsiteEnt.resourceDropsiteTypes().indexOf(type) !== -1){
+						if (dropsiteEnt.position() && dropsiteEnt.getMetadata("resourceQuantity_" + type) > 0){
+							var dist = VectorDistance(ent.position(), dropsiteEnt.position());
+							if (dist < minDropsiteDist){
+								nearestDropsite = dropsiteEnt;
+								minDropsiteDist = dist;
+							}
+						}
+					}
+				});
+				
 				var workerPosition = ent.position();
 				var supplies = [];
 				resourceSupplies[type].forEach(function(supply) {
@@ -154,6 +167,10 @@ EconomyManager.prototype.reassignIdleWorkers = function(gameState) {
 					
 
 					var dist = VectorDistance(supply.position, workerPosition);
+					// Add on a factor for the nearest dropsite if one exists
+					if (nearestDropsite){
+						dist += 5 * VectorDistance(supply.position, nearestDropsite.position());
+					}
 
 					// Skip targets that are far too far away (e.g. in the
 					// enemy base)
@@ -258,13 +275,11 @@ EconomyManager.prototype.buildNewCC= function(gameState, queues) {
 //creates and maintains a map of tree density
 EconomyManager.prototype.updateResourceMaps = function(gameState, events){
 	// The weight of the influence function is amountOfResource/decreaseFactor 
-	var decreaseFactor = {wood: 15, stone: 100, metal: 100};
+	var decreaseFactor = {'wood': 15, 'stone': 100, 'metal': 100, 'food': 20};
 	// This is the maximum radius of the influence
-	var radius = {wood:13, stone: 10, metal: 10};
-	var resources = ["wood", "stone", "metal"];
+	var radius = {'wood':13, 'stone': 10, 'metal': 10, 'food': 10};
 	
-	for (key in resources){
-		var resource = resources[key];
+	for (var resource in radius){
 		// if there is no resourceMap create one with an influence for everything with that resource
 		if (! this.resourceMaps[resource]){
 			this.resourceMaps[resource] = new Map(gameState);
@@ -329,7 +344,7 @@ EconomyManager.prototype.getBestResourceBuildSpot = function(gameState, resource
 	// Multiply by tree density to get a combination of the two maps
 	friendlyTiles.multiply(this.resourceMaps[resource]);
 	
-	//friendlyTiles.dumpIm("tree_density_fade.png", 10000);
+	//friendlyTiles.dumpIm(resource + "_density_fade.png", 10000);
 	
 	var obstructions = Map.createObstructionMap(gameState);
 	obstructions.expandInfluences();
@@ -339,24 +354,40 @@ EconomyManager.prototype.getBestResourceBuildSpot = function(gameState, resource
 	// Convert from 1d map pixel coordinates to game engine coordinates
 	var x = ((bestIdx % friendlyTiles.width) + 0.5) * gameState.cellSize;
 	var z = (Math.floor(bestIdx / friendlyTiles.width) + 0.5) * gameState.cellSize;
-	
 	return [x,z];
+};
+
+EconomyManager.prototype.updateResourceConcentrations = function(gameState){
+	var self = this;
+	var resources = ["food", "wood", "stone", "metal"];
+	for (key in resources){
+		var resource = resources[key];
+		gameState.getOwnEntities().forEach(function(ent) {
+			if (ent.resourceDropsiteTypes() && ent.resourceDropsiteTypes().indexOf(resource) !== -1){
+				var radius = 14;
+				
+				var pos = ent.position();
+				var x = Math.round(pos[0] / gameState.cellSize);
+				var z = Math.round(pos[1] / gameState.cellSize);
+				
+				var quantity = self.resourceMaps[resource].sumInfluence(x, z, radius);
+				
+				ent.setMetadata("resourceQuantity_" + resource, quantity);
+			}
+		});	
+	}
 };
 
 //return the number of resource dropsites with an acceptable amount of the resource nearby
 EconomyManager.prototype.checkResourceConcentrations = function(gameState, resource){
 	//TODO: make these values adaptive 
 	var requiredInfluence = {wood: 16000, stone: 300, metal: 300};
-	var self = this;
 	var count = 0;
 	gameState.getOwnEntities().forEach(function(ent) {
 		if (ent.resourceDropsiteTypes() && ent.resourceDropsiteTypes().indexOf(resource) !== -1){
-			var radius = 14;
+			var quantity = ent.getMetadata("resourceQuantity_" + resource);
 			
-			var pos = ent.position();
-			var x = Math.round(pos[0] / gameState.cellSize);
-			var z = Math.round(pos[1] / gameState.cellSize);
-			if (self.resourceMaps[resource].sumInfluence(x, z, radius) > requiredInfluence[resource]){
+			if (quantity >= requiredInfluence[resource]){
 				count ++;
 			}
 		}
@@ -384,8 +415,9 @@ EconomyManager.prototype.update = function(gameState, queues, events) {
 		this.targetNumBuilders = 5;
 	}
 	
-	Engine.ProfileStart("Update Resource Maps");
+	Engine.ProfileStart("Update Resource Maps and Concentrations");
 	this.updateResourceMaps(gameState, events);
+	this.updateResourceConcentrations(gameState, resource);
 	Engine.ProfileStop();
 	
 	var resources = ["wood", "stone", "metal"];

@@ -4,7 +4,8 @@ var EconomyManager = function() {
 	
 	this.resourceMaps = {}; // Contains maps showing the density of wood, stone and metal
 	
-	this.setCount = 0;  //stops villagers being reassigned to other resources too frequently
+	this.setCount = 0;  //stops villagers being reassigned to other resources too frequently, count a set number of 
+	                    //turns before trying to reassign them.
 	
 	this.dropsiteNumbers = {wood: 2, stone: 1, metal: 1};
 };
@@ -473,7 +474,9 @@ EconomyManager.prototype.update = function(gameState, queues, events) {
 	this.reassignIdleWorkers(gameState);
 	Engine.ProfileStop();
 	
+	Engine.ProfileStart("Assign builders");
 	this.assignToFoundations(gameState);
+	Engine.ProfileStop();
 
 	Engine.ProfileStop();
 };

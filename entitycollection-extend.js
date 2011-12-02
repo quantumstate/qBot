@@ -27,7 +27,7 @@ EntityCollection.prototype.attackMove = function(x, z){
 	return this;
 };
 
-// Do naughty stuff to replace the entity collection constructor
+// Do naughty stuff to replace the entity collection constructor for updating entity collections
 var tmpEntityCollection = function(baseAI, entities, filter, gameState){
 	this._ai = baseAI;
 	this._entities = entities;

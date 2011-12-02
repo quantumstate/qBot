@@ -161,7 +161,7 @@ PathFinder.prototype.wipeGradient = function(){
 
 // Returns the path down a gradient from the start to the bottom of the gradient, returns a point for every 20 cells in normal mode
 // in entryPoints mode this returns the point where the path enters the region near the destination, currently defined 
-// by blockPlacementRadius.
+// by blockPlacementRadius.  Note doesn't return a path when the destination is within the blockpoint radius.
 PathFinder.prototype.walkGradient = function(start, mode){
 	var positions = [[0,1], [0,-1], [1,0], [-1,0], [1,1], [-1,-1], [1,-1], [-1,1]];
 	
@@ -201,7 +201,7 @@ PathFinder.prototype.walkGradient = function(start, mode){
 		}
 		moved = false;
 	}
-	if (mode === 'entryPoints' && blockPoint === undefined){
+	if (blockPoint === undefined){
 		return undefined;
 	}
 	// Add an obstruction to the map at the blockpoint so the next path will take a different route.

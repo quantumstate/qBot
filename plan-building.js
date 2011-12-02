@@ -10,7 +10,7 @@ var BuildingConstructionPlan = function(gameState, type, position) {
 	}
 	this.category = "building";
 	this.cost = new Resources(template.cost());
-	this.number = 1;
+	this.number = 1; // The number of buildings to build
 };
 
 BuildingConstructionPlan.prototype.canExecute = function(gameState) {
@@ -26,7 +26,6 @@ BuildingConstructionPlan.prototype.canExecute = function(gameState) {
 };
 
 BuildingConstructionPlan.prototype.execute = function(gameState) {
-	// warn("Executing BuildingConstructionPlan "+uneval(this));
 
 	var builders = gameState.findBuilders(this.type).toEntityArray();
 
@@ -55,8 +54,8 @@ BuildingConstructionPlan.prototype.findGoodPosition = function(gameState) {
 	// First, find all tiles that are far enough away from obstructions:
 
 	var obstructionMap = Map.createObstructionMap(gameState,template);
-	// Engine.DumpImage("tiles0.png", obstructionTiles, map.width,
-	// map.height, 64);
+	
+	//obstructionMap.dumpIm("obstructions.png");
 
 	obstructionMap.expandInfluences();
 	
@@ -64,12 +63,14 @@ BuildingConstructionPlan.prototype.findGoodPosition = function(gameState) {
 
 	var friendlyTiles = new Map(gameState);
 	
+	// If a position was specified then place the building as close to it as possible
 	if (this.position){
 		var x = Math.round(this.position[0] / cellSize);
 		var z = Math.round(this.position[1] / cellSize);
 		friendlyTiles.addInfluence(x, z, 200);
 		//friendlyTiles.dumpIm("pos.png",	200);
-	}else{			
+	}else{
+		// Not position was specified so try and find a sensible place to build
 		gameState.getOwnEntities().forEach(function(ent) {
 			if (ent.hasClass("Structure")) {
 				var infl = 32;
@@ -80,12 +81,14 @@ BuildingConstructionPlan.prototype.findGoodPosition = function(gameState) {
 				var x = Math.round(pos[0] / cellSize);
 				var z = Math.round(pos[1] / cellSize);
 				if (template._template.BuildRestrictions.Category === "Field"){
-					
+					// Only care about being near a place where we can deposit food for fields
 					if (ent.resourceDropsiteTypes() && ent.resourceDropsiteTypes().indexOf("food") !== -1){
 						friendlyTiles.addInfluence(x, z, infl, infl);
 					}
 				}else{
 					friendlyTiles.addInfluence(x, z, infl);
+					// If this is not a field add a negative influence near the CivCentre because we want to leave this 
+					// area for fields.
 					if (ent.hasClass("CivCentre")){
 						friendlyTiles.addInfluence(x, z, infl/8, -infl/2);
 					}
@@ -95,9 +98,9 @@ BuildingConstructionPlan.prototype.findGoodPosition = function(gameState) {
 			}
 		});
 	}
-
-	// Find target building's approximate obstruction radius,
-	// and expand by a bit to make sure we're not too close
+	
+	// Find target building's approximate obstruction radius, and expand by a bit to make sure we're not too close, this
+	// allows room for units to walk between buildings.
 	var radius = Math.ceil(template.obstructionRadius() / cellSize) + 2;
 
 	// Find the best non-obstructed tile
@@ -111,13 +114,6 @@ BuildingConstructionPlan.prototype.findGoodPosition = function(gameState) {
 	
 	var x = ((bestIdx % friendlyTiles.width) + 0.5) * cellSize;
 	var z = (Math.floor(bestIdx / friendlyTiles.width) + 0.5) * cellSize;
-	
-	//friendlyTiles.dumpIm("friendly.png");
-
-	// Engine.DumpImage("tiles1.png", obstructionTiles, map.width,
-	// map.height, 32);
-	// Engine.DumpImage("tiles2.png", friendlyTiles, map.width, map.height,
-	// 256);
 
 	// default angle
 	var angle = 3*Math.PI/4;

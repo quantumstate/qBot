@@ -5,6 +5,8 @@ var EconomyManager = function() {
 	this.resourceMaps = {}; // Contains maps showing the density of wood, stone and metal
 	
 	this.setCount = 0;  //stops villagers being reassigned to other resources too frequently
+	
+	this.dropsiteNumbers = {wood: 2, stone: 1, metal: 1};
 };
 // More initialisation for stuff that needs the gameState
 EconomyManager.prototype.init = function(gameState){
@@ -113,8 +115,6 @@ EconomyManager.prototype.reassignIdleWorkers = function(gameState) {
 		return (ent.isIdle() || ent.getMetadata("subrole") === "idle");
 	});
 	
-	
-	
 	if (idleWorkers.length) {
 		var resourceSupplies = gameState.findResourceSupplies();
 
@@ -127,12 +127,13 @@ EconomyManager.prototype.reassignIdleWorkers = function(gameState) {
 			var types = self.pickMostNeededResources(gameState);
 			for ( var typeKey in types) {
 				var type = types[typeKey];
-				// Make sure there's actually some of that type
+				// Make sure there are actually some resources of that type
 				if (!resourceSupplies[type])
 					continue;
 
-				// Pick the closest one.
 				// TODO: we should care about gather rates of workers
+				
+				// Find the nearest dropsite for this resource from the worker
 				var nearestDropsite = undefined;
 				var minDropsiteDist = Math.min(); // set to infinity initially
 				gameState.getOwnEntities().forEach(function(dropsiteEnt) {
@@ -165,7 +166,7 @@ EconomyManager.prototype.reassignIdleWorkers = function(gameState) {
 						return;
 					}
 					
-
+					// measure the distance to the resource
 					var dist = VectorDistance(supply.position, workerPosition);
 					// Add on a factor for the nearest dropsite if one exists
 					if (nearestDropsite){
@@ -192,7 +193,7 @@ EconomyManager.prototype.reassignIdleWorkers = function(gameState) {
 					return false;
 				});
 
-				// Start gathering
+				// Start gathering the best resource (by distance from the dropsite and unit)
 				if (supplies.length) {
 					ent.gather(supplies[0].entity);
 					ent.setMetadata("subrole", "gatherer");
@@ -395,42 +396,14 @@ EconomyManager.prototype.checkResourceConcentrations = function(gameState, resou
 	return count;
 };
 
-EconomyManager.prototype.update = function(gameState, queues, events) {
-	Engine.ProfileStart("economy update");
-	
-	this.reassignRolelessUnits(gameState);
-	
-	this.buildNewCC(gameState,queues);
-
-	Engine.ProfileStart("Train workers and build farms");
-	this.trainMoreWorkers(gameState, queues);
-
-	this.buildMoreFields(gameState, queues);
-	Engine.ProfileStop();
-	
-	//Later in the game we want to build stuff faster.
-	if (gameState.countEntitiesWithType(gameState.applyCiv("units/{civ}_support_female_citizen")) > 50) {
-		this.targetNumBuilders = 10;
-	}else{
-		this.targetNumBuilders = 5;
-	}
-	
-	Engine.ProfileStart("Update Resource Maps and Concentrations");
-	this.updateResourceMaps(gameState, events);
-	this.updateResourceConcentrations(gameState, resource);
-	Engine.ProfileStop();
-	
-	var resources = ["wood", "stone", "metal"];
-	var dropsiteNumbers = {wood: 2, stone: 1, metal: 1};
-	
+EconomyManager.prototype.buildDropsites = function(gameState, queues){
 	if (queues.economicBuilding.totalLength() === 0 && 
 			gameState.countFoundationsWithType(gameState.applyCiv("structures/{civ}_mill")) === 0 &&
 			gameState.countFoundationsWithType(gameState.applyCiv("structures/{civ}_civil_centre")) === 0){ 
 			//only ever build one mill/CC at a time
 		if (gameState.getTimeElapsed() > 30 * 1000){
-			for (key in resources){
-				var resource = resources[key];
-				if (this.checkResourceConcentrations(gameState, resource) < dropsiteNumbers[resource]){
+			for (var resource in this.dropsiteNumbers){
+				if (this.checkResourceConcentrations(gameState, resource) < this.dropsiteNumbers[resource]){
 					var spot = this.getBestResourceBuildSpot(gameState, resource);
 					
 					var myCivCentres = gameState.getOwnEntities().filter(function(ent) {
@@ -453,6 +426,35 @@ EconomyManager.prototype.update = function(gameState, queues, events) {
 			}
 		}
 	}
+};
+
+EconomyManager.prototype.update = function(gameState, queues, events) {
+	Engine.ProfileStart("economy update");
+	
+	this.reassignRolelessUnits(gameState);
+	
+	this.buildNewCC(gameState,queues);
+
+	Engine.ProfileStart("Train workers and build farms");
+	this.trainMoreWorkers(gameState, queues);
+
+	this.buildMoreFields(gameState, queues);
+	Engine.ProfileStop();
+	
+	//Later in the game we want to build stuff faster.
+	if (gameState.countEntitiesWithType(gameState.applyCiv("units/{civ}_support_female_citizen")) > 50) {
+		this.targetNumBuilders = 10;
+	}else{
+		this.targetNumBuilders = 5;
+	}
+	
+	Engine.ProfileStart("Update Resource Maps and Concentrations");
+	this.updateResourceMaps(gameState, events);
+	this.updateResourceConcentrations(gameState);
+	Engine.ProfileStop();
+	
+	this.buildDropsites(gameState, queues);
+	
 	
 	// TODO: implement a timer based system for this
 	this.setCount += 1;

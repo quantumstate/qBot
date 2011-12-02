@@ -442,10 +442,16 @@ EconomyManager.prototype.update = function(gameState, queues, events) {
 	Engine.ProfileStop();
 	
 	//Later in the game we want to build stuff faster.
-	if (gameState.countEntitiesWithType(gameState.applyCiv("units/{civ}_support_female_citizen")) > 50) {
+	if (gameState.countEntitiesWithType(gameState.applyCiv("units/{civ}_support_female_citizen")) > this.targetNumWorkers * 0.5) {
 		this.targetNumBuilders = 10;
 	}else{
 		this.targetNumBuilders = 5;
+	}
+	
+	if (gameState.countEntitiesWithType(gameState.applyCiv("units/{civ}_support_female_citizen")) > this.targetNumWorkers * 0.8) {
+		this.dropsiteNumbers = {wood: 3, stone: 2, metal: 2};
+	}else{
+		this.dropsiteNumbers = {wood: 2, stone: 1, metal: 1};
 	}
 	
 	Engine.ProfileStart("Update Resource Maps and Concentrations");

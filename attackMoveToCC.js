@@ -63,8 +63,13 @@ AttackMoveToCC.prototype.execute = function(gameState, militaryManager){
 		var target = targets.toEntityArray()[0];
 		this.targetPos = target.position();
 		
+		// Find possible distinct paths to the enemy 
 		var pathFinder = new PathFinder(gameState);
 		var pathsToEnemy = pathFinder.getPaths(curPos, this.targetPos);
+		if (! pathsToEnemy){
+			pathsToEnemy = [this.targetPos];
+		}
+		
 		var rand = Math.floor(Math.random() * pathsToEnemy.length);
 		this.path = pathsToEnemy[rand];
 

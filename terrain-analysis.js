@@ -55,7 +55,9 @@ TerrainAnalysis.prototype.findClosestPassablePoint = function(startPoint){
  *  
  * Used to create a list of distinct paths between two points. 
  * 
- * Currently a WIP.
+ * Currently it works basically.
+ * 
+ * TODO: Make this use territories.
  */
 
 
@@ -67,6 +69,11 @@ function PathFinder(gameState){
 
 copyPrototype(PathFinder, TerrainAnalysis);
 
+/*
+ * Returns a list of distinct paths to the destination.  Curerntly paths are distinct if they are more than 
+ * blockRadius apart at a distance of blockPlacementRadius from the destination.  Where blockRadius and 
+ * blockPlacementRadius are defined in walkGradient
+ */
 PathFinder.prototype.getPaths = function(start, end, mode){
 	var s = this.findClosestPassablePoint(this.gamePosToMapPos(start));
 	var e = this.findClosestPassablePoint(this.gamePosToMapPos(end));
@@ -88,7 +95,7 @@ PathFinder.prototype.getPaths = function(start, end, mode){
 		this.wipeGradient();
 	}
 	
-	this.dumpIm("terrainanalysis.png", 511);
+	//this.dumpIm("terrainanalysis.png", 511);
 	
 	if (paths.length > 0){
 		return paths;
@@ -97,6 +104,7 @@ PathFinder.prototype.getPaths = function(start, end, mode){
 	}
 };
 
+// Creates a potential gradient with the start point having the lowest potential
 PathFinder.prototype.makeGradient = function(start, end){
 	var w = this.width;
 	var map = this.map;
@@ -142,6 +150,7 @@ PathFinder.prototype.makeGradient = function(start, end){
 	
 };
 
+// Clears the map to just have the obstructions marked on it.
 PathFinder.prototype.wipeGradient = function(){
 	for (var i = 0; i < this.length; i++){
 		if (this.map[i] > 0){
@@ -151,6 +160,8 @@ PathFinder.prototype.wipeGradient = function(){
 };
 
 // Returns the path down a gradient from the start to the bottom of the gradient, returns a point for every 20 cells in normal mode
+// in entryPoints mode this returns the point where the path enters the region near the destination, currently defined 
+// by blockPlacementRadius.
 PathFinder.prototype.walkGradient = function(start, mode){
 	var positions = [[0,1], [0,-1], [1,0], [-1,0], [1,1], [-1,-1], [1,-1], [-1,1]];
 	
@@ -174,10 +185,12 @@ PathFinder.prototype.walkGradient = function(start, mode){
 				cur = [cur[0]+pos[0], cur[1]+pos[1]];
 				moved = true;
 				count++;
+				// Mark the point to put an obstruction at before calculating the next path
 				if (count === blockPlacementRadius){
 					blockPoint = cur;
 				}
-				if (count % 20 === 0){
+				// Add waypoints to the path, fairly well spaced apart.
+				if (count % 40 === 0){
 					path.unshift([cur[0]*this.cellSize, cur[1]*this.cellSize]);
 				}
 				break;
@@ -188,9 +201,10 @@ PathFinder.prototype.walkGradient = function(start, mode){
 		}
 		moved = false;
 	}
-	if (blockPoint === undefined){
+	if (mode === 'entryPoints' && blockPoint === undefined){
 		return undefined;
 	}
+	// Add an obstruction to the map at the blockpoint so the next path will take a different route.
 	this.addInfluence(blockPoint[0], blockPoint[1], blockRadius, -10000, 'constant');
 	if (mode === 'entryPoints'){
 		// returns the point where the path enters the blockPlacementRadius
@@ -201,6 +215,8 @@ PathFinder.prototype.walkGradient = function(start, mode){
 	}
 };
 
+// Would be used to calculate the width of a chokepoint
+// NOTE: Doesn't currently work.
 PathFinder.prototype.countAttached = function(pos){
 	var positions = [[0,1], [0,-1], [1,0], [-1,0]];
 	var w = this.width;
@@ -269,7 +285,6 @@ Accessibility.prototype.floodFill = function(start){
 		while (stack.length > 0){
 			var cur = stack.pop();
 			
-			var dist = map[cur[0] + w*(cur[1])] + 1;
 			// Check the positions adjacent to the current cell
 			for (var i = 0; i < positions.length; i++){
 				var pos = positions[i];

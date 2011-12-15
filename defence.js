@@ -1,8 +1,12 @@
 function Defence(){
-	this.AQUIRE_DIST = 220;
-	this.RELEASE_DIST = 300;
+	this.AQUIRE_DIST = 22000;
+	this.RELEASE_DIST = 30000;
 	
-	// These are objects containing ... TODO:: finish comment 
+	this.GROUP_RADIUS = 20; // units will be added to a group if they are within this radius
+	this.GROUP_BREAK_RADIUS = 40; // units will leave a group if they are outside of this radius
+	this.GROUP_MERGE_RADIUS = 10; // Two groups with centres this far apart will be merged TODO: implement
+	
+	// These are objects with the keys being object ids and values being the entity objects
 	this.attackers = {}; // Enemy soldiers which are attacking our base
 	this.defenders = {}; // Our soldiers currently being used for defence
 	
@@ -11,9 +15,15 @@ function Defence(){
 
 Defence.prototype.update = function(gameState, events, militaryManager){
 	Engine.ProfileStart("Defence Manager");
-	var enemyTroops = militaryManager.getEnemySoldiers;
+	var enemyTroops = militaryManager.getEnemySoldiers();
 	
+	this.updateAttackers(gameState, events, enemyTroops);
 	
+	debug(this.newAttackers);
+	
+	this.updateGroups();
+	
+	debug(this.groups);
 	
 	Engine.ProfileStop();
 };
@@ -27,119 +37,114 @@ Defence.prototype.getKeyBuildings = function(gameState){
 Defence.prototype.updateAttackers = function(gameState, events, enemyTroops){
 	var self = this;
 	
-	var removeList = [];
-	this.attackersObjects = [];
+	var keyBuildings = this.getKeyBuildings(gameState);
 	
-	var keyBuildings = this.getKeyBuildings();
-	
-	for (var id in this.attackers){
-		var attacker = gameState.getEntityById(id);
-		if (!attacker){
-			removeList.push(id);
-			continue;
-		}
-		
-		if (attacker.position()){
-			inRange = false;
-			keyBuildings.forEach(function(ent){
-				if (ent.position() && VectorDistance(ent.position(), attacker.position()) < self.RELEASE_DIST){
-					inRange = true;
-				}
-			});
-			if (! inRange){
-				removeList.push(id);
-				continue;
-			}
-		}
-		
-		this.attackers[id] = attacker;
-	}
-	for (var i = 0; i < removeList.length; i++){
-		delete this.attackers[removeList[i]];
-	}
+	this.newAttackers = [];
+	this.oldAttackers = this.attackers;
+	this.attackers = {};
 	
 	enemyTroops.forEach(function(ent){
 		if (ent.position()){
 			var minDist = Math.min();
 			keyBuildings.forEach(function(building){
-				if (ent.position() && VectorDistance(ent.position(), attacker.position()) < minDist){
-					minDist = VectorDistance(ent.position(), attacker.position());
+				if (building.position() && VectorDistance(ent.position(), building.position()) < minDist){
+					minDist = VectorDistance(ent.position(), building.position());
 				}
 			});
 			
-		}
-	});
-};
-
-Defence.prototype.detectGroups = function(ents) {
-	var GROUP_RADIUS = 20;
-	
-	var groups = [];
-	
-	ents.forEach(function(ent){
-		if (ent.position()){
-			for (var i in groups){
-				if (VectorDistance(ent.position(), groups[i].position) <= GROUP_RADIUS){
-					groups[i].members.push(ent);
-					
-					groups[i].sumPosition[0] += ent.position()[0];
-					groups[i].sumPosition[1] += ent.position()[1];
-					groups[i].position[0] = groups[i].sumPosition[0]/groups[i].members.length;
-					groups[i].position[1] = groups[i].sumPosition[1]/groups[i].members.length;
-					return;
+			if (self.oldAttackers[ent.id()]){
+				if (minDist < self.RELEASE_DIST){
+					self.attackers[ent.id()] = ent;
+				}
+			}else{
+				if (minDist < self.AQUIRE_DIST){
+					self.attackers[ent.id()] = ent;
+					self.newAttackers.push(ent.id());
 				}
 			}
-			groups.push({"members": [ent],
-			             "position": [ent.position[0], ent.position[1]],
-			             "sumPosition": [ent.position[0], ent.position[1]]});
 		}
 	});
-	
-	return groups;
 };
 
-Defence.prototype.detectGroups2 = function(ents) {
-	var GROUP_RADIUS = 20;
-	var GRID_SIZE = 10;
+Defence.prototype.updateGroups = function(){
 	
-	var top = Math.max();
-	var bottom = Math.min();
-	var left = Math.max();
-	var right = Math.min();
-	var pos = [];
-	ents.forEach(function(ent){
-		if (ent.position()){
-			pos.push([ent.position(), ent.id()]);
-			if (ent.position()[0] < left){
-				left = ent.position()[0];
-			}
-			if (ent.position()[0] > right){
-				right = ent.position()[0];
-			}
-			if (ent.position()[1] < top){
-				top = ent.position()[1];
-			}
-			if (ent.position()[1] < bottom){
-				bottom = ent.position()[1];
+	for (var i = 0; i < this.groups.length; i++){
+		var group = this.groups[i];
+		// remove members which are no longer attackers
+		for (var j = 0; j < group.members.length; j++){
+			if (!this.attackers[group.members[j]]){
+				group.members.splice(j, 1);
+				j--;
 			}
 		}
-	});
+		// recalculate centre of group
+		group.sumPosition = [0,0];
+		for (var j = 0; j < group.members.length; j++){
+			group.sumPosition[0] += this.attackers[group.members[j]].position()[0];
+			group.sumPosition[1] += this.attackers[group.members[j]].position()[1];
+		}
+		group.position[0] = group.sumPosition[0]/group.members.length;
+		group.position[1] = group.sumPosition[1]/group.members.length;
+		
+		// remove members that are too far away
+		for (var j = 0; j < group.members.length; j++){
+			if ( VectorDistance(this.attackers[group.members[j]].position(), group.position) > this.GROUP_BREAK_RADIUS){
+				this.newAttackers.push(group.members[j]);
+				group.sumPosition[0] -= this.attackers[group.members[j]].position()[0];
+				group.sumPosition[1] -= this.attackers[group.members[j]].position()[1];
+				group.members.splice(j, 1);
+				j--;
+			}
+		}
+		
+		if (group.members.length === 0){
+			this.groups.splice(i, 1);
+			i--;
+		}
+		
+		group.position[0] = group.sumPosition[0]/group.members.length;
+		group.position[1] = group.sumPosition[1]/group.members.length;
+	}
 	
-	var width = right - left;
-	var height = bottom - top;
-	if (width <= 0 || height <= 0){
-		return undefined;
-	} 
-	
-	var grid = [];
-	for (var i = 0; i < GRID_SIZE; i++){
-		grid.push([]);
-		for (var j = 0; j < GRID_SIZE; j++){
-			grid[i].push([]);
+	// add ungrouped attackers to groups
+	for (var j in this.newAttackers){
+		var ent = this.attackers[this.newAttackers[j]];
+		var foundGroup = false;
+		for (var i in this.groups){
+			if (VectorDistance(ent.position(), this.groups[i].position) <= this.GROUP_RADIUS){
+				this.groups[i].members.push(ent.id());
+				
+				this.groups[i].sumPosition[0] += ent.position()[0];
+				this.groups[i].sumPosition[1] += ent.position()[1];
+				this.groups[i].position[0] = this.groups[i].sumPosition[0]/this.groups[i].members.length;
+				this.groups[i].position[1] = this.groups[i].sumPosition[1]/this.groups[i].members.length;
+				
+				foundGroup = true;
+				break;
+			}
+		}
+		if (!foundGroup){
+			this.groups.push({"members": [ent.id()],
+	             "position": [ent.position()[0], ent.position()[1]],
+	             "sumPosition": [ent.position()[0], ent.position()[1]]});
 		}
 	}
 	
-	for (var i in pos){
-		
+	// merge groups which are close together
+	for (var i = 0; i < this.groups.length; i++){
+		for (var j = 0; j < this.groups.length; j++){
+			if (this.groups[i].members.length < this.groups[j].members.length){
+				if (VectorDistance(this.groups[i].position, this.groups[j].position) < this.GROUP_MERGE_RADIUS){
+					this.groups[j].members = this.groups[i].members.concat(this.groups[j].members);
+					this.groups[j].sumPosition[0] += this.groups[i].sumPosition[0];
+					this.groups[j].sumPosition[1] += this.groups[i].sumPosition[1];
+					this.groups[j].position[0] = this.groups[j].sumPosition[0]/this.groups[j].members.length;
+					this.groups[j].position[1] = this.groups[j].sumPosition[1]/this.groups[j].members.length;
+					
+					this.groups.splice(i, 1);
+					i--;
+				}
+			}
+		}
 	}
 };

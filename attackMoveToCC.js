@@ -39,7 +39,7 @@ AttackMoveToCC.prototype.execute = function(gameState, militaryManager){
 	// If there are no critical structures, attack anything else that's critical
 	if (targets.length == 0) {
 		targets = gameState.entities.filter(function(ent) {
-			return (gameState.isEntityEnemy(ent) && ent.hasClass("ConquestCritical") && ent.owner() !== 0);
+			return (gameState.isEntityEnemy(ent) && ent.hasClass("ConquestCritical") && ent.owner() !== 0 && ent.position());
 		});
 	}
 	// If there's nothing, attack anything else that's less critical

@@ -10,17 +10,20 @@ var MilitaryAttackManager = function() {
 	this.targetSquadSize = 10;
 	this.targetScoutTowers = 10;
 
-	// these use the structure soldiers[unitId] = true|false to register the
-	// units
+	// these use the structure soldiers[unitId] = true|false to register the units
 	this.soldiers = {};
 	this.assigned = {};
 	this.unassigned = {};
 	this.garrisoned = {};
 	this.enemyAttackers = {};
 
-	this.attackManagers = [AttackMoveToCC];
+	this.attackManagers = [AttackMoveToLocation];
 	this.availableAttacks = [];
 	this.currentAttacks = [];
+	
+	// Counts how many attacks we have sent at the enemy.
+	this.attackCount = 0;
+	this.lastAttackTime = 0;
 	
 	this.defenceManager = new Defence();
 	
@@ -51,8 +54,12 @@ MilitaryAttackManager.prototype.init = function(gameState) {
 		this.bFort[i] = gameState.applyCiv(this.bFort[i]);
 	}
 	
+	this.getEconomicTargets = function(gameState, militaryManager){
+		return militaryManager.getEnemyBuildings(gameState, "Economic");
+	};
+	// TODO: figure out how to make this generic
 	for (var i in this.attackManagers){
-		this.availableAttacks[i] = new this.attackManagers[i](gameState, this);
+		this.availableAttacks[i] = new this.attackManagers[i](gameState, this, 10, 10, this.getEconomicTargets);
 	}
 	
 	var filter = Filters.and(Filters.isEnemy(), Filters.byClassesOr(["CitizenSoldier", "Super", "Siege"]));
@@ -556,12 +563,24 @@ MilitaryAttackManager.prototype.update = function(gameState, queues, events) {
 		}
 	}
 	
-	// Look for attack plans which can be executed
-	for (var i = 0; i < this.availableAttacks.length; i++){
-		if (this.availableAttacks[i].canExecute(gameState, this)){
-			this.availableAttacks[i].execute(gameState, this);
-			this.currentAttacks.push(this.availableAttacks[i]);
-			this.availableAttacks.splice(i, 1, new this.attackManagers[i](gameState, this));
+	
+	// Look for attack plans which can be executed, only do this once every minute
+	if (gameState.getTimeElapsed() - 60*1000 > this.lastAttackTime){
+		this.lastAttackTime = gameState.getTimeElapsed();
+		for (var i = 0; i < this.availableAttacks.length; i++){
+			if (this.availableAttacks[i].canExecute(gameState, this)){
+				// Make it so raids happen a bit randomly 
+				if (this.attackCount > 4 || Math.random() < 0.25){
+					this.availableAttacks[i].execute(gameState, this);
+					this.currentAttacks.push(this.availableAttacks[i]);
+				}
+				if (this.attackCount < 4){
+					this.availableAttacks.splice(i, 1, new this.attackManagers[i](gameState, this, 10, 10, this.getEconomicTargets));
+				}else{
+					this.availableAttacks.splice(i, 1, new this.attackManagers[i](gameState, this, 20, 40 + 10 * Math.max(this.attackCount, 8)));
+				}
+				this.attackCount++;
+			}
 		}
 	}
 	// Keep current attacks updated

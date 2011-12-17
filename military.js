@@ -539,6 +539,20 @@ MilitaryAttackManager.prototype.update = function(gameState, queues, events) {
 			this.entity(i).setMetadata("role", "worker");
 		}
 	}
-
+	
+	// Dynamically change priorities
+	
+	var females = gameState.countEntitiesWithType(gameState.applyCiv("units/{civ}_support_female_citizen"));
+	var femalesTarget = gameState.ai.modules[0].targetNumWorkers;
+	var enemyStrength = this.measureEnemyStrength(gameState);
+	var availableStrength = this.measureAvailableStrength();
+	var additionalPriority = (enemyStrength - availableStrength) * 5;
+	
+	additionalPriority = Math.min(Math.max(additionalPriority, -50), 220);
+	var advancedProportion = (availableStrength / 40) * (females/femalesTarget);
+	advancedProportion = Math.min(advancedProportion, 0.7);
+	gameState.ai.priorities.citizenSoldier = (1-advancedProportion) * (150 + additionalPriority) + 1;
+	gameState.ai.priorities.advancedSoldier = advancedProportion * (150 + additionalPriority) + 1;
+	
 	Engine.ProfileStop();
 };

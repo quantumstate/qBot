@@ -22,7 +22,7 @@ function QBotAI(settings) {
 
 	this.productionQueues = [];
 	
-	var priorities = {
+	this.priorities = {
 		house : 500,
 		citizenSoldier : 100,
 		villager : 100,
@@ -31,10 +31,10 @@ function QBotAI(settings) {
 		advancedSoldier : 30,
 		siege : 10,
 		militaryBuilding : 30,
-		defenceBuilding: 5,
+		defenceBuilding: 17,
 		civilCentre: 1000
 	};
-	this.queueManager = new QueueManager(this.queues, priorities);
+	this.queueManager = new QueueManager(this.queues, this.priorities);
 	
 	this.firstTime = true;
 
@@ -83,7 +83,7 @@ QBotAI.prototype.OnUpdate = function() {
 	if (this.events.length > 0){
 		this.savedEvents = this.savedEvents.concat(this.events);
 	}
-
+	
 	// Run the update every n turns, offset depending on player ID to balance
 	// the load
 	if ((this.turn + this.player) % 10 == 0) {

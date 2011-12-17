@@ -30,7 +30,7 @@ function QBotAI(settings) {
 		field: 4,
 		advancedSoldier : 30,
 		siege : 10,
-		militaryBuilding : 30,
+		militaryBuilding : 50,
 		defenceBuilding: 17,
 		civilCentre: 1000
 	};

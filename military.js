@@ -77,6 +77,9 @@ MilitaryAttackManager.prototype.defineUnitsAndBuildings = function(){
 	this.uCivAdvanced.iber = ["units/iber_cavalry_spearman_b", "units/iber_champion_cavalry", "units/iber_champion_infantry" ];
 	this.uCivSiege.iber = ["units/iber_mechanical_siege_ram"];
 	
+	this.uCivCitizenSoldier.pers = [ "units/pers_infantry_spearman_b", "units/pers_infantry_archer_b", "units/pers_infantry_javelinist_b" ];
+	this.uCivAdvanced.pers = ["units/pers_cavalry_javelinist_b", "units/pers_champion_infantry", "units/pers_champion_cavalry", "units/pers_cavalry_spearman_b", "units/pers_cavalry_swordsman_b", "units/pers_cavalry_javelinist_b", "units/pers_cavalry_archer_b", "pers_kardakes_hoplite", "units/pers_kardakes_skirmisher", "units/pers_war_elephant" ];
+	this.uCivSiege.pers = ["units/pers_mechanical_siege_ram"];
 	//defaults
 	this.uCitizenSoldier = ["units/{civ}_infantry_spearman_b", "units/{civ}_infantry_slinger_b", "units/{civ}_infantry_swordsman_b", "units/{civ}_infantry_javelinist_b", "units/{civ}_infantry_archer_b" ];
 	this.uAdvanced = ["units/{civ}_cavalry_spearman_b", "units/{civ}_cavalry_javelinist_b", "units/{civ}_champion_cavalry", "units/{civ}_champion_infantry"];
@@ -90,6 +93,7 @@ MilitaryAttackManager.prototype.defineUnitsAndBuildings = function(){
 	this.bCivAdvanced.cart = [ "structures/{civ}_fortress", "structures/{civ}_embassy_celtic", "structures/{civ}_embassy_iberian", "structures/{civ}_embassy_italiote" ];
 	this.bCivAdvanced.celt = [ "structures/{civ}_kennel", "structures/{civ}_fortress_b", "structures/{civ}_fortress_g" ];
 	this.bCivAdvanced.iber = [ "structures/{civ}_fortress" ];
+	this.bCivAdvanced.pers = [ "structures/{civ}_fortress", "structures/{civ}_stables", "structures/{civ}_apadana" ];
 };
 
 /**

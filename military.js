@@ -35,6 +35,7 @@ MilitaryAttackManager.prototype.init = function(gameState) {
 		this.uSiege = this.uCivSiege[civ];
 
 		this.bAdvanced = this.bCivAdvanced[civ];
+		this.bFort = this.bCivFort[civ];
 	}
 	
 	for (var i in this.uCitizenSoldier){
@@ -45,6 +46,9 @@ MilitaryAttackManager.prototype.init = function(gameState) {
 	}
 	for (var i in this.uSiege){
 		this.uSiege[i] = gameState.applyCiv(this.uSiege[i]);
+	}
+	for (var i in this.bFort){
+		this.bFort[i] = gameState.applyCiv(this.bFort[i]);
 	}
 	
 	for (var i in this.attackManagers){
@@ -94,6 +98,13 @@ MilitaryAttackManager.prototype.defineUnitsAndBuildings = function(){
 	this.bCivAdvanced.celt = [ "structures/{civ}_kennel", "structures/{civ}_fortress_b", "structures/{civ}_fortress_g" ];
 	this.bCivAdvanced.iber = [ "structures/{civ}_fortress" ];
 	this.bCivAdvanced.pers = [ "structures/{civ}_fortress", "structures/{civ}_stables", "structures/{civ}_apadana" ];
+	
+	this.bCivFort = {};
+	this.bCivFort.hele = [ "structures/{civ}_fortress" ];
+	this.bCivFort.cart = [ "structures/{civ}_fortress" ];
+	this.bCivFort.celt = [ "structures/{civ}_fortress_b", "structures/{civ}_fortress_g" ];
+	this.bCivFort.iber = [ "structures/{civ}_fortress" ];
+	this.bCivFort.pers = [ "structures/{civ}_fortress" ];
 };
 
 /**
@@ -245,7 +256,6 @@ MilitaryAttackManager.prototype.getGarrisonBuildings = function(gameState) {
 
 // return n available units and makes these units unavailable
 MilitaryAttackManager.prototype.getAvailableUnits = function(n, filter) {
-	debug("Get Available Units " + n);
 	var ret = [];
 	var count = 0;
 	for (var i in this.unassigned) {
@@ -454,12 +464,34 @@ MilitaryAttackManager.prototype.measureEnemyStrength = function(gameState){
 MilitaryAttackManager.prototype.buildDefences = function(gameState, queues){ 
 	if (gameState.countEntitiesAndQueuedWithType(gameState.applyCiv('structures/{civ}_scout_tower'))
 			+ queues.defenceBuilding.totalLength() <= gameState.getBuildLimits()["ScoutTower"]) {
-		if (false && gameState.ai.pathsToMe.length > 0){
-			var position = gameState.ai.pathsToMe.shift();
-			queues.defenceBuilding.addItem(new BuildingConstructionPlan(gameState, 'structures/{civ}_scout_tower', position));
-			debug(position);
-		}else{
-			queues.defenceBuilding.addItem(new BuildingConstructionPlan(gameState, 'structures/{civ}_scout_tower'));
+		
+		
+		gameState.getOwnEntities().forEach(function(dropsiteEnt) {
+			if (dropsiteEnt.resourceDropsiteTypes() && dropsiteEnt.getMetadata("scoutTower") !== true){
+				var position = dropsiteEnt.position();
+				if (position){
+					queues.defenceBuilding.addItem(new BuildingConstructionPlan(gameState, 'structures/{civ}_scout_tower', position));
+				}
+				dropsiteEnt.setMetadata("scoutTower", true);
+			}
+		});
+	}
+	
+	var numFortresses = 0;
+	for (var i in this.bFort){
+		numFortresses += gameState.countEntitiesAndQueuedWithType(gameState.applyCiv(this.bFort[i]));
+	}
+	if (numFortresses + queues.defenceBuilding.totalLength() <= gameState.getBuildLimits()["Fortress"]) {
+		if (gameState.countEntitiesWithType(gameState.applyCiv("units/{civ}_support_female_citizen")) > gameState.ai.modules[0].targetNumWorkers * 0.5){
+			if (gameState.getTimeElapsed() > 200 * 1000 * numFortresses){
+				if (gameState.ai.pathsToMe.length > 0){
+					var position = gameState.ai.pathsToMe.shift();
+					// TODO: pick a fort randomly from the list.
+					queues.defenceBuilding.addItem(new BuildingConstructionPlan(gameState, this.bFort[0], position));
+				}else{
+					queues.defenceBuilding.addItem(new BuildingConstructionPlan(gameState, this.bFort[0]));
+				}
+			}
 		}
 	}
 };
@@ -514,7 +546,7 @@ MilitaryAttackManager.prototype.update = function(gameState, queues, events) {
 	}
 	//build advanced military buildings
 	if (gameState.countEntitiesWithType(gameState.applyCiv("units/{civ}_support_female_citizen")) > 
-			gameState.ai.modules[0].targetNumWorkers * 0.8){
+			gameState.ai.modules[0].targetNumWorkers * 0.7){
 		if (queues.militaryBuilding.totalLength() === 0){
 			for (var i in this.bAdvanced){
 				if (gameState.countEntitiesAndQueuedWithType(gameState.applyCiv(this.bAdvanced[i])) < 1){
@@ -557,6 +589,10 @@ MilitaryAttackManager.prototype.update = function(gameState, queues, events) {
 	advancedProportion = Math.min(advancedProportion, 0.7);
 	gameState.ai.priorities.citizenSoldier = (1-advancedProportion) * (150 + additionalPriority) + 1;
 	gameState.ai.priorities.advancedSoldier = advancedProportion * (150 + additionalPriority) + 1;
+	
+	if (females/femalesTarget > 0.7){
+		gameState.ai.priorities.defenceBuilding = 70;
+	}
 	
 	Engine.ProfileStop();
 };

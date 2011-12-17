@@ -270,6 +270,7 @@ Defence.prototype.updateGroups = function(){
 					
 					this.groups.splice(i, 1);
 					i--;
+					break; 
 				}
 			}
 		}

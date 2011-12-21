@@ -68,6 +68,8 @@ QBotAI.prototype.runInit = function(gameState){
 		var pathFinder = new PathFinder(gameState);
 		this.pathsToMe = pathFinder.getPaths(enemyCivCentres.toEntityArray()[0].position(), myCivCentres.toEntityArray()[0].position(), 'entryPoints');
 		
+		this.timer = new Timer();
+		
 		this.firstTime = false;
 	}
 };
@@ -80,6 +82,7 @@ QBotAI.prototype.OnUpdate = function() {
 	if (this.gameFinished){
 		return;
 	}
+	
 	if (this.events.length > 0){
 		this.savedEvents = this.savedEvents.concat(this.events);
 	}

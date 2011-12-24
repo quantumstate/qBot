@@ -83,7 +83,7 @@ var Config = {
 		"citizenSoldier" : 100,
 		"villager" : 100,
 		"economicBuilding" : 30,
-		"field" : 4,
+		"field" : 20,
 		"advancedSoldier" : 30,
 		"siege" : 10,
 		"militaryBuilding" : 50,

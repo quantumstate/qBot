@@ -1,12 +1,12 @@
 function Defence(){
-	this.AQUIRE_DIST = 220;
-	this.RELEASE_DIST = 250;
+	this.AQUIRE_DIST = Config.defence.acquireDistance;
+	this.RELEASE_DIST = Config.defence.releaseDistance;
 	
-	this.GROUP_RADIUS = 20; // units will be added to a group if they are within this radius
-	this.GROUP_BREAK_RADIUS = 40; // units will leave a group if they are outside of this radius
-	this.GROUP_MERGE_RADIUS = 10; // Two groups with centres this far apart will be merged
+	this.GROUP_RADIUS = Config.defence.groupRadius; // units will be added to a group if they are within this radius
+	this.GROUP_BREAK_RADIUS = Config.defence.groupBreakRadius; // units will leave a group if they are outside of this radius
+	this.GROUP_MERGE_RADIUS = Config.defence.groupMergeRadius; // Two groups with centres this far apart will be merged
 	
-	this.DEFENCE_RATIO = 2; // How many defenders we want per attacker.  Need to balance fewer losses vs. lost economy
+	this.DEFENCE_RATIO = Config.defence.defenderRatio; // How many defenders we want per attacker.  Need to balance fewer losses vs. lost economy
 	
 	// These are objects with the keys being entity ids and values being the entity objects
 	// NOTE: It is assumed that all attackers have a valid position, the attackers list must be kept up to date so this 

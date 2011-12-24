@@ -1,5 +1,5 @@
 function Defence(){
-	this.AQUIRE_DIST = Config.defence.acquireDistance;
+	this.ACQUIRE_DIST = Config.defence.acquireDistance;
 	this.RELEASE_DIST = Config.defence.releaseDistance;
 	
 	this.GROUP_RADIUS = Config.defence.groupRadius; // units will be added to a group if they are within this radius
@@ -172,7 +172,7 @@ Defence.prototype.updateAttackers = function(gameState, events, enemyTroops){
 					self.attackers[ent.id()] = ent;
 				}
 			}else{
-				if (minDist < self.AQUIRE_DIST){
+				if (minDist < self.ACQUIRE_DIST){
 					self.attackers[ent.id()] = ent;
 					self.newAttackers.push(ent.id());
 				}

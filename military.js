@@ -86,7 +86,7 @@ MilitaryAttackManager.prototype.init = function(gameState) {
 	};
 	// TODO: figure out how to make this generic
 	for (var i in this.attackManagers){
-		this.availableAttacks[i] = new this.attackManagers[i](gameState, this, Config.attack.groupSize, Config.attack.groupSize, this.getEconomicTargets);
+		this.availableAttacks[i] = new this.attackManagers[i](gameState, this);
 	}
 	
 	var filter = Filters.and(Filters.isEnemy(), Filters.byClassesOr(["CitizenSoldier", "Super", "Siege"]));
@@ -544,32 +544,15 @@ MilitaryAttackManager.prototype.update = function(gameState, queues, events) {
 	}
 	
 	// Look for attack plans which can be executed, only do this once every minute
-	if (gameState.getTimeElapsed() < 6.5*60*1000){
-		if (gameState.getTimeElapsed() - 60*1000 > this.lastAttackTime){
-			this.lastAttackTime = gameState.getTimeElapsed();
-			for (var i = 0; i < this.availableAttacks.length; i++){
-				if (this.availableAttacks[i].canExecute(gameState, this)){
-					// Make it so raids happen a bit randomly 
-					if (Math.random() < 0.35){
-						this.availableAttacks[i].execute(gameState, this);
-						this.currentAttacks.push(this.availableAttacks[i]);
-						debug("Raiding!");
-						this.availableAttacks.splice(i, 1, new this.attackManagers[i](gameState, this, Config.attack.groupSize, Config.attack.groupSize, this.getEconomicTargets));
-					}
-				}
-			}
+	for (var i = 0; i < this.availableAttacks.length; i++){
+		if (this.availableAttacks[i].canExecute(gameState, this)){
+			this.availableAttacks[i].execute(gameState, this);
+			this.currentAttacks.push(this.availableAttacks[i]);
+			debug("Attacking!");
 		}
-	}else{
-		for (var i = 0; i < this.availableAttacks.length; i++){
-			if (this.availableAttacks[i].canExecute(gameState, this)){
-				this.availableAttacks[i].execute(gameState, this);
-				this.currentAttacks.push(this.availableAttacks[i]);
-				debug("Attacking!");
-			}
-			this.availableAttacks.splice(i, 1, new this.attackManagers[i](gameState, this, 20, 60));
-		}
+		this.availableAttacks.splice(i, 1, new this.attackManagers[i](gameState, this));
 	}
-	
+
 	// Keep current attacks updated
 	for (i in this.currentAttacks){
 		this.currentAttacks[i].update(gameState, this, events);

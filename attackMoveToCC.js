@@ -1,4 +1,4 @@
-var AttackMoveToCC = function(gameState, militaryManager){
+function AttackMoveToCC(gameState, militaryManager){
 	this.minAttackSize = 20;
 	this.maxAttackSize = 60;
 	this.idList=[];
@@ -49,7 +49,6 @@ AttackMoveToCC.prototype.execute = function(gameState, militaryManager){
 	if (targets.length == 0) {
 		targets = militaryManager.getEnemyBuildings(gameState,"Village");
 	}
-	
 
 	// If we have a target, move to it
 	if (targets.length) {

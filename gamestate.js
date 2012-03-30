@@ -13,6 +13,11 @@ var GameState = function(ai) {
 	this.playerData = ai.playerData;
 	this.buildingsBuilt = 0;
 	
+	if (!this.ai._gameStateStore){
+		this.ai._gameStateStore = {};
+	}
+	this.store = this.ai._gameStateStore;
+	
 	this.cellSize = 4; // Size of each map tile
 };
 
@@ -75,6 +80,16 @@ GameState.prototype.isPlayerEnemy = function(id) {
 	return this.playerData.isEnemy[id];
 };
 
+GameState.prototype.getEnemies = function(){
+	var ret = [];
+	for (i in this.playerData.isEnemy){
+		if (this.playerData.isEnemy[i]){
+			ret.push(i);
+		}
+	}
+	return ret;
+};
+
 GameState.prototype.isEntityAlly = function(ent) {
 	if (ent && ent.owner && (typeof ent.owner) === "function"){
 		return this.playerData.isAlly[ent.owner()];
@@ -103,7 +118,32 @@ GameState.prototype.isEntityOwn = function(ent) {
 };
 
 GameState.prototype.getOwnEntities = function() {
-	return new EntityCollection(this.ai, this.ai._ownEntities);
+	//return new EntityCollection(this.ai, this.ai._ownEntities);
+	return this.ai._ownEntities;
+};
+
+GameState.prototype.getEnemyEntities = function() {
+	var diplomacyChange = false;
+	var enemies = this.getEnemies();
+	if (this.store.enemies){
+		if (this.store.enemies.length != enemies.length){
+			diplomacyChange = true;
+		}else{
+			for (var i  = 0; i < enemies.length; i++){
+				if (enemies[i] !== this.store.enemies[i]){
+					diplomacyChange = true;
+				}
+			}
+		}
+	}
+	if (diplomacyChange || !this.store.enemyEntities){
+		var filter = Filters.byOwners(enemies);
+		this.store.enemyEntities = this.getEntities().filter(filter);
+		this.store.enemyEntities.registerUpdates();
+		this.store.enemies = enemies;
+	}
+	
+	return this.store.enemyEntities;
 };
 
 GameState.prototype.getEntities = function() {

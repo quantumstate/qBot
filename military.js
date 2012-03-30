@@ -89,8 +89,9 @@ MilitaryAttackManager.prototype.init = function(gameState) {
 		this.availableAttacks[i] = new this.attackManagers[i](gameState, this);
 	}
 	
-	var filter = Filters.and(Filters.isEnemy(), Filters.byClassesOr(["CitizenSoldier", "Super", "Siege"]));
-	this.enemySoldiers = new EntityCollection(gameState.ai, gameState.entities._entities, filter, gameState);
+	var enemies = gameState.getEnemyEntities();
+	var filter = Filters.byClassesOr(["CitizenSoldier", "Super", "Siege"]);
+	this.enemySoldiers = enemies.filter(filter); // TODO: cope with diplomacy changes
 };
 
 /**
@@ -321,7 +322,7 @@ MilitaryAttackManager.prototype.handleEvents = function(gameState, events) {
 // Also sends a debug message warning if the id has no entity
 MilitaryAttackManager.prototype.entity = function(id) {
 	if (this.gameState.entities._entities[id]) {
-		return new Entity(this.gameState.ai, this.gameState.entities._entities[id]);
+		return this.gameState.entities._entities[id]; // TODO: make this nicer
 	}else{
 		//debug("Entity " + id + " requested does not exist");
 	}

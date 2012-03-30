@@ -357,8 +357,9 @@ EconomyManager.prototype.updateResourceMaps = function(gameState, events){
 			var e = events[i];
 
 			if (e.type === "Destroy") {
-				if (e.msg.rawEntity.template){
-					var ent = new Entity(gameState.ai, e.msg.rawEntity);
+				if (e.msg.entityObj){
+					var ent = e.msg.entityObj;
+					//debug(ent);
 					if (ent && ent.resourceSupplyType() && ent.resourceSupplyType().generic === resource){
 						var x = Math.round(ent.position()[0] / gameState.cellSize);
 						var z = Math.round(ent.position()[1] / gameState.cellSize);
@@ -456,7 +457,9 @@ EconomyManager.prototype.updateNearbyResources = function(gameState){
 				var filterPos = Filters.byDistance(ent.position(), radius);
 				var filter = Filters.and(filterRes, filterPos);
 				
-				var collection = new EntityCollection(gameState.ai, gameState.entities._entities, filter, gameState);
+				//var collection = new EntityCollection(gameState.ai, gameState.entities._entities, filter, gameState);
+				var collection = gameState.getEntities().filter(filter);
+				collection.registerUpdates();				
 				
 				ent.setMetadata("nearbyResources_" + resource, collection);
 			}

@@ -269,7 +269,7 @@ EconomyManager.prototype.assignToFoundations = function(gameState) {
 	// builder-workers,
 	// try reassigning some other workers who are nearby
 
-	var foundations = gameState.findFoundations();
+	var foundations = gameState.getOwnFoundations();
 
 	// Check if nothing to build
 	if (!foundations.length){

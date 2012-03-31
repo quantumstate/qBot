@@ -26,8 +26,10 @@ GameState.prototype.getTimeElapsed = function() {
 };
 
 GameState.prototype.getTemplate = function(type) {
-	if (!this.templates[type])
+	if (!this.templates[type]){
 		return null;
+	}
+	
 	return new EntityTemplate(this.templates[type]);
 };
 
@@ -63,8 +65,9 @@ GameState.prototype.getPopulationMax = function() {
 };
 
 GameState.prototype.getPassabilityClassMask = function(name) {
-	if (!(name in this.ai.passabilityClasses))
+	if (!(name in this.ai.passabilityClasses)){
 		error("Tried to use invalid passability class name '" + name + "'");
+	}
 	return this.ai.passabilityClasses[name];
 };
 
@@ -118,8 +121,12 @@ GameState.prototype.isEntityOwn = function(ent) {
 };
 
 GameState.prototype.getOwnEntities = function() {
-	//return new EntityCollection(this.ai, this.ai._ownEntities);
-	return this.ai._ownEntities;
+	if (!this.store.ownEntities){
+		this.store.ownEntities = this.getEntities().filter(Filters.byOwner(this.player));
+		this.store.ownEntities.registerUpdates();
+	}
+	
+	return this.store.ownEntities;
 };
 
 GameState.prototype.getEnemyEntities = function() {
@@ -159,23 +166,19 @@ GameState.prototype.getEntityById = function(id){
 	return undefined;
 };
 
-GameState.prototype.getOwnEntitiesWithRole = Memoize('getOwnEntitiesWithRole', function(role) {
-	var metas = this.ai._entityMetadata;
-	if (role === undefined)
-		return this.getOwnEntities().filter_raw(function(ent) {
-			var metadata = metas[ent.id];
-			if (!metadata || !('role' in metadata))
-				return true;
-			return (metadata.role === undefined);
-		});
-	else
-		return this.getOwnEntities().filter_raw(function(ent) {
-			var metadata = metas[ent.id];
-			if (!metadata || !('role' in metadata))
-				return false;
-			return (metadata.role === role);
-		});
-});
+GameState.prototype.getOwnEntitiesByMetadata = function(key, value){
+	if (!this.store[key + "-" + value]){
+		var filter = Filters.byMetadata(key, value);
+		this.store[key + "-" + value] = this.getOwnEntities().filter(filter);
+		this.store[key + "-" + value].registerUpdates();
+	}
+	
+	return this.store[key + "-" + value];
+};
+
+GameState.prototype.getOwnEntitiesWithRole = function(role){
+	return this.getOwnEntitiesByMetadata("role", role);
+};
 
 GameState.prototype.countEntitiesWithType = function(type) {
 	var count = 0;
@@ -274,10 +277,17 @@ GameState.prototype.findBuilders = function(template) {
 	});
 };
 
-GameState.prototype.findFoundations = function(template) {
-	return this.getOwnEntities().filter(function(ent) {
-		return (ent.foundationProgress() !== undefined);
-	});
+GameState.prototype.getOwnFoundations = function() {
+	if (!this.store.foundations){
+		this.store.foundations = this.getOwnEntities().filter(Filters.isFoundation());
+		this.store.foundations.registerUpdates();
+	}
+	
+	return this.store.foundations;
+};
+
+GameState.prototype.getResourceSupplies = function(){
+	
 };
 
 GameState.prototype.findResourceSupplies = function() {
@@ -318,6 +328,7 @@ GameState.prototype.getBuildCounts = function() {
 	return this.playerData.buildCounts;
 };
 
+// Checks whether the maximum number of buildings have been cnstructed for a certain catergory
 GameState.prototype.isBuildLimitReached = function(category) {
 	if(this.playerData.buildLimits[category] === undefined || this.playerData.buildCounts[category] === undefined)
 		return false;

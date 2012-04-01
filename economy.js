@@ -38,13 +38,15 @@ EconomyManager.prototype.pickMostNeededResources = function(gameState) {
 	this.gatherWeights = gameState.ai.queueManager.futureNeeds(gameState);
 
 	var numGatherers = {};
-	for ( var type in this.gatherWeights)
-		numGatherers[type] = 0;
+	for ( var type in this.gatherWeights){
+		numGatherers[type] = gameState.updatingCollection("worker-gathering-" + type, 
+				Filters.byMetadata("gather-type", type), gameState.getOwnEntitiesWithRole("worker")).length; 
+	}
 
-	gameState.getOwnEntitiesWithRole("worker").forEach(function(ent) {
+	/*gameState.getOwnEntitiesWithRole("worker").forEach(function(ent) {
 		if (ent.getMetadata("subrole") === "gatherer")
 			numGatherers[ent.getMetadata("gather-type")] += 1;
-	});
+	});*/
 
 	var types = Object.keys(this.gatherWeights);
 	types.sort(function(a, b) {
@@ -111,14 +113,12 @@ EconomyManager.prototype.reassignIdleWorkers = function(gameState) {
 	var self = this;
 
 	// Search for idle workers, and tell them to gather resources based on demand
-
-	var idleWorkers = gameState.getOwnEntitiesWithRole("worker").filter(function(ent) {
-		return (ent.isIdle() || ent.getMetadata("subrole") === "idle");
-	});
+	var filter = Filters.or(Filters.isIdle(), Filters.byMetadata("subrole", "idle"));
+	var idleWorkers = gameState.updatingCollection("idle-workers", filter, gameState.getOwnEntitiesWithRole("worker"));
 	
 	if (idleWorkers.length) {
 		var resourceSupplies;
-		var territoryMap = Map.createTerritoryMap(gameState); 
+		//var territoryMap = Map.createTerritoryMap(gameState); 
 
 		idleWorkers.forEach(function(ent) {
 			// Check that the worker isn't garrisoned
@@ -127,139 +127,12 @@ EconomyManager.prototype.reassignIdleWorkers = function(gameState) {
 			}
 
 			var types = self.pickMostNeededResources(gameState);
-			//debug("Most Needed Resources: " + uneval(types));
-			for ( var typeKey in types) {
-				var type = types[typeKey];
-
-				// TODO: we should care about gather rates of workers
-				
-				// Find the nearest dropsite for this resource from the worker
-				var nearestDropsite = undefined;
-				var nearbyResources = undefined;
-				var minDropsiteDist = Math.min(); // set to infinity initially
-				gameState.getOwnEntities().forEach(function(dropsiteEnt) {
-					if (dropsiteEnt.resourceDropsiteTypes() && dropsiteEnt.resourceDropsiteTypes().indexOf(type) !== -1){
-						var nearby = dropsiteEnt.getMetadata("nearbyResources_" + type);
-						if (dropsiteEnt.position() && nearby && nearby.length > 0){
-							var dist = VectorDistance(ent.position(), dropsiteEnt.position());
-							if (dist < minDropsiteDist){
-								nearestDropsite = dropsiteEnt;
-								minDropsiteDist = dist;
-								nearbyResources = nearby;
-							}
-						}
-					}
-				});
-				
-				if (!nearbyResources){
-					resourceSupplies = resourceSupplies || gameState.findResourceSupplies();
-					nearbyResources = resourceSupplies[type];
-				}
-				
-				// Make sure there are actually some resources of that type
-				if (!nearbyResources){
-					debug("No " + type + " found! (1)");
-					continue;
-				}
-				var numSupplies = nearbyResources.length;
-				
-				var workerPosition = ent.position();
-				var supplies = [];
-				var count = 0;
-				
-				while (supplies.length == 0 && count <= 1){
-					if (count != 0){
-						resourceSupplies = resourceSupplies || gameState.findResourceSupplies();
-						nearbyResources = resourceSupplies[type];
-						if (!nearbyResources){
-							debug("No " + type + " found! (2)");
-							continue;
-						}
-					}
-					count += 1;
-					nearbyResources.forEach(function(supply) {
-						if (! supply.entity){
-							supply = {
-								"entity" : supply,
-								"amount" : supply.resourceSupplyAmount(),
-								"type" : supply.resourceSupplyType(),
-								"position" : supply.position()
-							};
-						}
-						
-						// Skip targets that are too hard to hunt
-						if (supply.entity.isUnhuntable()){
-							return;
-						}
-						
-						// And don't go for the bloody fish! TODO: better accessibility checks 
-						if (supply.entity.hasClass("SeaCreature")){
-							return;
-						}
-						
-						// Don't go for floating treasures since we won't be able to reach them and it kills the pathfinder.
-						if (supply.entity.templateName() == "other/special_treasure_shipwreck_debris" || 
-								supply.entity.templateName() == "other/special_treasure_shipwreck" ){
-							return;
-						}
-						
-						// Check we can actually reach the resource
-						if (!gameState.ai.accessibility.isAccessible(supply.position)){
-							return;
-						}
-						
-						// Don't gather in enemy territory
-						var territory = territoryMap.point(supply.position);
-						if (territory != 0 && gameState.isPlayerEnemy(territory)){
-							return;
-						}
-						
-						// measure the distance to the resource
-						var dist = VectorDistance(supply.position, workerPosition);
-						// Add on a factor for the nearest dropsite if one exists
-						if (nearestDropsite){
-							dist += 5 * VectorDistance(supply.position, nearestDropsite.position());
-						}
-						
-						// Go for treasure as a priority
-						if (dist < 1200 && supply.type.generic == "treasure"){
-							dist /= 1000;
-						}
-	
-						// Skip targets that are far too far away (e.g. in the
-						// enemy base), only do this for common supplies
-						if (dist > 6072 && numSupplies > 100){
-							return;
-						}
-	
-						supplies.push({
-							dist : dist,
-							entity : supply.entity
-						});
-					});
-				}
-
-				supplies.sort(function(a, b) {
-					// Prefer smaller distances
-					if (a.dist != b.dist)
-						return a.dist - b.dist;
-
-					return 0;
-				});
-
-				// Start gathering the best resource (by distance from the dropsite and unit)
-				if (supplies.length) {
-					ent.gather(supplies[0].entity);
-					ent.setMetadata("subrole", "gatherer");
-					ent.setMetadata("gather-type", type);
-					return;
-				}else{
-					debug("No " + type + " found! (3)");
-				}
-			}
-
-			// Couldn't find any types to gather
-			ent.setMetadata("subrole", "idle");
+			
+			ent.setMetadata("subrole", "gatherer");
+			ent.setMetadata("gather-type", types[0]);
+			
+			var worker = new Worker(ent);
+			worker.update(gameState);
 		});
 	}
 };
@@ -446,22 +319,20 @@ EconomyManager.prototype.updateNearbyResources = function(gameState){
 	var radius = 64;
 	for (key in resources){
 		var resource = resources[key];
-		gameState.getOwnEntities().forEach(function(ent) {
-			if (ent.resourceDropsiteTypes() && ent.resourceDropsiteTypes().indexOf(resource) !== -1
-					&& ent.getMetadata("nearbyResources_" + resource) === undefined){
-				if (!ent.position()){
-					return;
-				}
+		
+		gameState.getOwnDropsites(resource).forEach(function(ent) {
+			if (ent.getMetadata("nearby-resources-" + resource) === undefined){
+				var filterPos = Filters.byStaticDistance(ent.position(), radius);
 				
-				var filterRes = Filters.byResource(resource);
-				var filterPos = Filters.byDistance(ent.position(), radius);
-				var filter = Filters.and(filterRes, filterPos);
+				var collection = gameState.getResourceSupplies(resource).filter(filterPos);
+				collection.registerUpdates();
 				
-				//var collection = new EntityCollection(gameState.ai, gameState.entities._entities, filter, gameState);
-				var collection = gameState.getEntities().filter(filter);
-				collection.registerUpdates();				
-				
-				ent.setMetadata("nearbyResources_" + resource, collection);
+				ent.setMetadata("nearby-resources-" + resource, collection);
+				ent.setMetadata("active-dropsite-" + resource, true);
+			}
+			
+			if (ent.getMetadata("nearby-resources-" + resource).length === 0){
+				ent.setMetadata("active-dropsite-" + resource, false);
 			}
 		});
 	}
@@ -548,8 +419,9 @@ EconomyManager.prototype.update = function(gameState, queues, events) {
 	this.updateNearbyResources(gameState);
 	Engine.ProfileStop();
 	
+	Engine.ProfileStart("Build new Dropsites");
 	this.buildDropsites(gameState, queues);
-	
+	Engine.ProfileStop();
 	
 	// TODO: implement a timer based system for this
 	this.setCount += 1;
@@ -565,6 +437,11 @@ EconomyManager.prototype.update = function(gameState, queues, events) {
 	Engine.ProfileStart("Assign builders");
 	this.assignToFoundations(gameState);
 	Engine.ProfileStop();
+	
+	/*gameState.getOwnEntitiesWithRole("worker").forEach(function(ent){
+		debug(ent.unitAIState());
+		debug(ent.unitAIOrderData());
+	});*/
 
 	Engine.ProfileStop();
 };

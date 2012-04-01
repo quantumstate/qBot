@@ -21,6 +21,15 @@ var GameState = function(ai) {
 	this.cellSize = 4; // Size of each map tile
 };
 
+GameState.prototype.updatingCollection = function(id, filter, collection){
+	if (!this.store[id]){
+		this.store[id] = collection.filter(filter);
+		this.store[id].registerUpdates();
+	}
+	
+	return this.store[id];
+};
+
 GameState.prototype.getTimeElapsed = function() {
 	return this.timeElapsed;
 };
@@ -278,16 +287,15 @@ GameState.prototype.findBuilders = function(template) {
 };
 
 GameState.prototype.getOwnFoundations = function() {
-	if (!this.store.foundations){
-		this.store.foundations = this.getOwnEntities().filter(Filters.isFoundation());
-		this.store.foundations.registerUpdates();
-	}
-	
-	return this.store.foundations;
+	return this.updatingCollection("ownFoundations", Filters.isFoundation(), this.getOwnEntities());
 };
 
-GameState.prototype.getResourceSupplies = function(){
-	
+GameState.prototype.getOwnDropsites = function(resource){
+	return this.updatingCollection("dropsite-own-" + resource, Filters.isDropsite(resource), this.getOwnEntities());
+};
+
+GameState.prototype.getResourceSupplies = function(resource){
+	return this.updatingCollection("resource-" + resource, Filters.byResource(resource), this.getEntities());
 };
 
 GameState.prototype.findResourceSupplies = function() {

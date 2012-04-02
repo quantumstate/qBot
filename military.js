@@ -11,7 +11,6 @@ var MilitaryAttackManager = function() {
 	this.soldiers = {};
 	this.assigned = {};
 	this.unassigned = {};
-	this.garrisoned = {};
 	this.enemyAttackers = {};
 
 	this.attackManagers = [AttackMoveToLocation];
@@ -144,93 +143,10 @@ MilitaryAttackManager.prototype.registerSoldiers = function(gameState) {
 	});
 };
 
-// Ungarrisons all units
-MilitaryAttackManager.prototype.ungarrisonAll = function(gameState) {
-	debug("ungarrison units");
-	
-	this.getGarrisonBuildings(gameState).forEach(function(bldg){
-		bldg.unloadAll();
-	});
-	
-	for ( var i in this.garrisoned)	{
-		if(this.assigned[i]) {
-			this.unassignUnit(i);
-		}
-		if (this.entity(i)){
-			this.entity(i).setMetadata("subrole","idle");
-		}
-	}
-	this.garrisoned = {};
-};
-
-//Garrisons citizens
-MilitaryAttackManager.prototype.garrisonCitizens = function(gameState) {
-	var self = this;
-	debug("garrison Citizens"); 
-	gameState.getOwnEntities().forEach(function(ent) {
-		var dogarrison = false;
-		// Look for workers which have a position (i.e. not garrisoned)
-		if(ent.hasClass("Worker") && ent.position()) {
-			for (id in self.enemyAttackers) {
-				if(self.entity(id).visionRange() >= VectorDistance(self.entity(id).position(),ent.position())) {
-					dogarrison = true;
-					break;
-				}
-			}
-			if(dogarrison) {
-				self.garrisonUnit(gameState,ent.id());
-			}
-		}
-		return true;
-	});
-};
-
-// garrison the soldiers
-MilitaryAttackManager.prototype.garrisonSoldiers = function(gameState) {
-	debug("garrison Soldiers"); 
-	var units = this.getAvailableUnits(this.countAvailableUnits());
-	for (var i in units) {
-		this.garrisonUnit(gameState,units[i]);
-		if(!this.garrisoned[units[i]]) {
-			this.unassignUnit(units[i]);
-		}
-	}
-};
-
-MilitaryAttackManager.prototype.garrisonUnit = function(gameState,id) {
-	if (this.entity(id).position() === undefined){
-		return;
-	}
- 	var garrisonBuildings = this.getGarrisonBuildings(gameState).toEntityArray();
-	var bldgDistance = [];
-	for (var i in garrisonBuildings) {
-		var bldg = garrisonBuildings[i];
-		if(bldg.garrisoned().length <= bldg.garrisonMax()) {
-			bldgDistance.push([i,VectorDistance(bldg.position(),this.entity(id).position())]);
-		}
-	}
-	if(bldgDistance.length > 0) {
-		bldgDistance.sort(function(a,b) { return (a[1]-b[1]); });
-		var building = garrisonBuildings[bldgDistance[0][0]];
-		//debug("garrison id "+id+"into building "+building.id()+"walking distance "+bldgDistance[0][1]);
-		this.entity(id).garrison(building);
-		this.garrisoned[id] = true;
-		this.entity(id).setMetadata("subrole","garrison");
-	}
-};
-
 // return count of enemy buildings for a given building class
 MilitaryAttackManager.prototype.getEnemyBuildings = function(gameState,cls) {
 	var targets = gameState.entities.filter(function(ent) {
 			return (gameState.isEntityEnemy(ent) && ent.hasClass("Structure") && ent.hasClass(cls) && ent.owner() !== 0  && ent.position());
-		});
-	return targets;
-};
-
-// return count of own buildings for a given building class
-MilitaryAttackManager.prototype.getGarrisonBuildings = function(gameState) {
-	var targets = gameState.getOwnEntities().filter(function(ent) {
-			return (ent.hasClass("Structure") && ent.garrisonableClasses());
 		});
 	return targets;
 };

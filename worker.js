@@ -1,5 +1,5 @@
 /**
- * 
+ * This class makes a worker do as instructed by the economy manager
  */
 
 var Worker = function(ent) {
@@ -10,9 +10,17 @@ Worker.prototype.update = function(gameState) {
 	var subrole = this.ent.getMetadata("subrole");
 	
 	if (subrole === "gatherer"){
-		if ((this.ent.unitAIState().split(".")[1] !== "GATHER" && this.ent.unitAIState().split(".")[1] !== "RETURNRESOURCE")
-			|| this.getResourceType(this.ent.unitAIOrderData().type) !== this.ent.getMetadata("gather-type")){
+		if (!(this.ent.unitAIState().split(".")[1] === "GATHER" && this.getResourceType(this.ent.unitAIOrderData().type) === this.ent.getMetadata("gather-type"))
+				&& !(this.ent.unitAIState().split(".")[1] === "RETURNRESOURCE")){
+			// TODO: handle combat for hunting animals
+			Engine.ProfileStart("Start Gathering");
 			this.startGathering(gameState);
+			Engine.ProfileStop();
+		}
+	}else if(subrole === "builder"){
+		if (this.ent.unitAIState().split(".")[1] !== "REPAIR"){
+			var target = this.ent.getMetadata("target-foundation");
+			this.ent.repair(target);
 		}
 	}
 };

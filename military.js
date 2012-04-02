@@ -124,7 +124,7 @@ MilitaryAttackManager.prototype.findBestNewUnit = function(gameState, queue, sol
 	var types = [];
 	for ( var tKey in units) {
 		var t = units[tKey];
-		types.push([t, gameState.countEntitiesAndQueuedWithType(gameState.applyCiv(t))
+		types.push([t, gameState.countEntitiesAndQueuedByType(gameState.applyCiv(t))
 						+ queue.countAllByType(gameState.applyCiv(t)) ]);
 	}
 
@@ -140,7 +140,7 @@ MilitaryAttackManager.prototype.findBestNewUnit = function(gameState, queue, sol
 };
 
 MilitaryAttackManager.prototype.registerSoldiers = function(gameState) {
-	var soldiers = gameState.getOwnEntitiesWithRole("soldier");
+	var soldiers = gameState.getOwnEntitiesByRole("soldier");
 	var self = this;
 
 	soldiers.forEach(function(ent) {
@@ -449,7 +449,7 @@ MilitaryAttackManager.prototype.measureEnemyStrength = function(gameState){
 
 // Adds towers to the defenceBuilding queue
 MilitaryAttackManager.prototype.buildDefences = function(gameState, queues){ 
-	if (gameState.countEntitiesAndQueuedWithType(gameState.applyCiv('structures/{civ}_defense_tower'))
+	if (gameState.countEntitiesAndQueuedByType(gameState.applyCiv('structures/{civ}_defense_tower'))
 			+ queues.defenceBuilding.totalLength() < gameState.getBuildLimits()["DefenseTower"]) {
 		
 		
@@ -466,11 +466,11 @@ MilitaryAttackManager.prototype.buildDefences = function(gameState, queues){
 	
 	var numFortresses = 0;
 	for (var i in this.bFort){
-		numFortresses += gameState.countEntitiesAndQueuedWithType(gameState.applyCiv(this.bFort[i]));
+		numFortresses += gameState.countEntitiesAndQueuedByType(gameState.applyCiv(this.bFort[i]));
 	}
 	
 	if (numFortresses + queues.defenceBuilding.totalLength() < gameState.getBuildLimits()["Fortress"]) {
-		if (gameState.countEntitiesWithType(gameState.applyCiv("units/{civ}_support_female_citizen")) > gameState.ai.modules[0].targetNumWorkers * 0.5){
+		if (gameState.countEntitiesByType(gameState.applyCiv("units/{civ}_support_female_citizen")) > gameState.ai.modules[0].targetNumWorkers * 0.5){
 			if (gameState.getTimeElapsed() > 350 * 1000 * numFortresses){
 				if (gameState.ai.pathsToMe && gameState.ai.pathsToMe.length > 0){
 					var position = gameState.ai.pathsToMe.shift();
@@ -526,18 +526,18 @@ MilitaryAttackManager.prototype.update = function(gameState, queues, events) {
 
 	// Build more military buildings
 	// TODO: make military building better
-	if (gameState.countEntitiesWithType(gameState.applyCiv("units/{civ}_support_female_citizen")) > 30) {
-		if (gameState.countEntitiesAndQueuedWithType(gameState.applyCiv(this.bModerate[0]))
+	if (gameState.countEntitiesByType(gameState.applyCiv("units/{civ}_support_female_citizen")) > 30) {
+		if (gameState.countEntitiesAndQueuedByType(gameState.applyCiv(this.bModerate[0]))
 				+ queues.militaryBuilding.totalLength() < 1) {
 			queues.militaryBuilding.addItem(new BuildingConstructionPlan(gameState, this.bModerate[0]));
 		}
 	}
 	//build advanced military buildings
-	if (gameState.countEntitiesWithType(gameState.applyCiv("units/{civ}_support_female_citizen")) > 
+	if (gameState.countEntitiesByType(gameState.applyCiv("units/{civ}_support_female_citizen")) > 
 			gameState.ai.modules[0].targetNumWorkers * 0.7){
 		if (queues.militaryBuilding.totalLength() === 0){
 			for (var i in this.bAdvanced){
-				if (gameState.countEntitiesAndQueuedWithType(gameState.applyCiv(this.bAdvanced[i])) < 1){
+				if (gameState.countEntitiesAndQueuedByType(gameState.applyCiv(this.bAdvanced[i])) < 1){
 					queues.militaryBuilding.addItem(new BuildingConstructionPlan(gameState, this.bAdvanced[i]));
 				}
 			}
@@ -568,7 +568,7 @@ MilitaryAttackManager.prototype.update = function(gameState, queues, events) {
 	
 	// Dynamically change priorities
 	
-	var females = gameState.countEntitiesWithType(gameState.applyCiv("units/{civ}_support_female_citizen"));
+	var females = gameState.countEntitiesByType(gameState.applyCiv("units/{civ}_support_female_citizen"));
 	var femalesTarget = gameState.ai.modules[0].targetNumWorkers;
 	var enemyStrength = this.measureEnemyStrength(gameState);
 	var availableStrength = this.measureAvailableStrength();

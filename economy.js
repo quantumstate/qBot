@@ -16,7 +16,7 @@ EconomyManager.prototype.init = function(gameState){
 
 EconomyManager.prototype.trainMoreWorkers = function(gameState, queues) {
 	// Count the workers in the world and in progress
-	var numWorkers = gameState.countEntitiesAndQueuedWithType(gameState.applyCiv("units/{civ}_support_female_citizen"));
+	var numWorkers = gameState.countEntitiesAndQueuedByType(gameState.applyCiv("units/{civ}_support_female_citizen"));
 	numWorkers += queues.villager.countTotalQueuedUnits();
 
 	// If we have too few, train more
@@ -35,18 +35,16 @@ EconomyManager.prototype.pickMostNeededResources = function(gameState) {
 	var self = this;
 
 	// Find what resource type we're most in need of
-	this.gatherWeights = gameState.ai.queueManager.futureNeeds(gameState);
+	if (!gameState.turnCache["gather-weights-calculated"]){
+		this.gatherWeights = gameState.ai.queueManager.futureNeeds(gameState);
+		gameState.turnCache["gather-weights-calculated"] = true;
+	}
 
 	var numGatherers = {};
 	for ( var type in this.gatherWeights){
-		numGatherers[type] = gameState.updatingCollection("worker-gathering-" + type, 
-				Filters.byMetadata("gather-type", type), gameState.getOwnEntitiesWithRole("worker")).length; 
+		numGatherers[type] = gameState.updatingCollection("workers-gathering-" + type, 
+				Filters.byMetadata("gather-type", type), gameState.getOwnEntitiesByRole("worker")).length; 
 	}
-
-	/*gameState.getOwnEntitiesWithRole("worker").forEach(function(ent) {
-		if (ent.getMetadata("subrole") === "gatherer")
-			numGatherers[ent.getMetadata("gather-type")] += 1;
-	});*/
 
 	var types = Object.keys(this.gatherWeights);
 	types.sort(function(a, b) {
@@ -61,7 +59,7 @@ EconomyManager.prototype.pickMostNeededResources = function(gameState) {
 
 EconomyManager.prototype.reassignRolelessUnits = function(gameState) {
 	//TODO: Move this out of the economic section
-	var roleless = gameState.getOwnEntitiesWithRole(undefined);
+	var roleless = gameState.getOwnEntitiesByRole(undefined);
 
 	roleless.forEach(function(ent) {
 		if (ent.hasClass("Worker")){
@@ -87,7 +85,7 @@ EconomyManager.prototype.setWorkersIdleByPriority = function(gameState){
 		totalWeight += this.gatherWeights[type];
 	}
 
-	gameState.getOwnEntitiesWithRole("worker").forEach(function(ent) {
+	gameState.getOwnEntitiesByRole("worker").forEach(function(ent) {
 		if (ent.getMetadata("subrole") === "gatherer"){
 			numGatherers[ent.getMetadata("gather-type")] += 1;
 			totalGatherers += 1;
@@ -98,7 +96,7 @@ EconomyManager.prototype.setWorkersIdleByPriority = function(gameState){
 		var allocation = Math.floor(totalGatherers * (this.gatherWeights[type]/totalWeight));
 		if (allocation < numGatherers[type]){
 			var numToTake = numGatherers[type] - allocation;
-			gameState.getOwnEntitiesWithRole("worker").forEach(function(ent) {
+			gameState.getOwnEntitiesByRole("worker").forEach(function(ent) {
 				if (ent.getMetadata("subrole") === "gatherer" && ent.getMetadata("gather-type") === type && numToTake > 0){
 					ent.setMetadata("subrole", "idle");
 					numToTake -= 1;
@@ -114,7 +112,7 @@ EconomyManager.prototype.reassignIdleWorkers = function(gameState) {
 
 	// Search for idle workers, and tell them to gather resources based on demand
 	var filter = Filters.or(Filters.isIdle(), Filters.byMetadata("subrole", "idle"));
-	var idleWorkers = gameState.updatingCollection("idle-workers", filter, gameState.getOwnEntitiesWithRole("worker"));
+	var idleWorkers = gameState.updatingCollection("idle-workers", filter, gameState.getOwnEntitiesByRole("worker"));
 	
 	if (idleWorkers.length) {
 		var resourceSupplies;
@@ -125,16 +123,18 @@ EconomyManager.prototype.reassignIdleWorkers = function(gameState) {
 			if (ent.position() === undefined){
 				return;
 			}
-
+			
 			var types = self.pickMostNeededResources(gameState);
 			
 			ent.setMetadata("subrole", "gatherer");
 			ent.setMetadata("gather-type", types[0]);
-			
-			var worker = new Worker(ent);
-			worker.update(gameState);
 		});
 	}
+};
+
+EconomyManager.prototype.workersBySubrole = function(gameState, subrole) {
+	var workers = gameState.getOwnEntitiesByRole("worker");
+	return gameState.updatingCollection("subrole-" + subrole, Filters.byMetadata("subrole", subrole), workers);
 };
 
 EconomyManager.prototype.assignToFoundations = function(gameState) {
@@ -149,11 +149,9 @@ EconomyManager.prototype.assignToFoundations = function(gameState) {
 		return;
 	}
 
-	var workers = gameState.getOwnEntitiesWithRole("worker");
+	var workers = gameState.getOwnEntitiesByRole("worker");
 
-	var builderWorkers = workers.filter(function(ent) {
-		return (ent.getMetadata("subrole") === "builder");
-	});
+	var builderWorkers = this.workersBySubrole(gameState, "builder");
 
 	// Check if enough builders
 	var extraNeeded = this.targetNumBuilders - builderWorkers.length;
@@ -175,8 +173,8 @@ EconomyManager.prototype.assignToFoundations = function(gameState) {
 
 	// Order each builder individually, not as a formation
 	nearestNonBuilders.forEach(function(ent) {
-		ent.repair(target);
 		ent.setMetadata("subrole", "builder");
+		ent.setMetadata("target-foundation", target);
 	});
 };
 
@@ -184,7 +182,7 @@ EconomyManager.prototype.buildMoreFields = function(gameState, queues) {
 	// give time for treasures to be gathered
 	if (gameState.getTimeElapsed() < 30 * 1000)
 		return;
-	var numFields = gameState.countEntitiesAndQueuedWithType(gameState.applyCiv("structures/{civ}_field"));
+	var numFields = gameState.countEntitiesAndQueuedByType(gameState.applyCiv("structures/{civ}_field"));
 	numFields += queues.field.totalLength();
 
 	for ( var i = numFields; i < this.targetNumFields; i++) {
@@ -194,7 +192,7 @@ EconomyManager.prototype.buildMoreFields = function(gameState, queues) {
 
 // If all the CC's are destroyed then build a new one
 EconomyManager.prototype.buildNewCC= function(gameState, queues) {
-	var numCCs = gameState.countEntitiesAndQueuedWithType(gameState.applyCiv("structures/{civ}_civil_centre"));
+	var numCCs = gameState.countEntitiesAndQueuedByType(gameState.applyCiv("structures/{civ}_civil_centre"));
 	numCCs += queues.civilCentre.totalLength();
 
 	for ( var i = numCCs; i < 1; i++) {
@@ -209,21 +207,23 @@ EconomyManager.prototype.updateResourceMaps = function(gameState, events){
 	// This is the maximum radius of the influence
 	var radius = {'wood':13, 'stone': 10, 'metal': 10, 'food': 10};
 	
+	var self = this;
+	
 	for (var resource in radius){
 		// if there is no resourceMap create one with an influence for everything with that resource
 		if (! this.resourceMaps[resource]){
 			this.resourceMaps[resource] = new Map(gameState);
 
-			var supplies = gameState.findResourceSupplies();
-			if (supplies[resource]){
-				for (var i in supplies[resource]){
-					var current = supplies[resource][i];
-					var x = Math.round(current.position[0] / gameState.cellSize);
-					var z = Math.round(current.position[1] / gameState.cellSize);
-					var strength = Math.round(current.entity.resourceSupplyMax()/decreaseFactor[resource]);
-					this.resourceMaps[resource].addInfluence(x, z, radius[resource], strength);
+			var supplies = gameState.getResourceSupplies(resource);
+			supplies.forEach(function(ent){
+				if (!ent.position()){
+					return;
 				}
-			}
+				var x = Math.round(ent.position()[0] / gameState.cellSize);
+				var z = Math.round(ent.position()[1] / gameState.cellSize);
+				var strength = Math.round(ent.resourceSupplyMax()/decreaseFactor[resource]);
+				self.resourceMaps[resource].addInfluence(x, z, radius[resource], strength);
+			});
 		}
 		// Look for destroy events and subtract the entities original influence from the resourceMap
 		for (var i in events) {
@@ -244,7 +244,7 @@ EconomyManager.prototype.updateResourceMaps = function(gameState, events){
 		}
 	} 
 	
-	//this.resourceMaps[resource].dumpIm("tree_density.png");
+	this.resourceMaps['wood'].dumpIm("tree_density.png");
 };
 
 // Returns the position of the best place to build a new dropsite for the specified resource
@@ -401,13 +401,13 @@ EconomyManager.prototype.update = function(gameState, queues, events) {
 	Engine.ProfileStop();
 	
 	//Later in the game we want to build stuff faster.
-	if (gameState.countEntitiesWithType(gameState.applyCiv("units/{civ}_support_female_citizen")) > this.targetNumWorkers * 0.5) {
+	if (gameState.countEntitiesByType(gameState.applyCiv("units/{civ}_support_female_citizen")) > this.targetNumWorkers * 0.5) {
 		this.targetNumBuilders = 10;
 	}else{
 		this.targetNumBuilders = 5;
 	}
 	
-	if (gameState.countEntitiesWithType(gameState.applyCiv("units/{civ}_support_female_citizen")) > this.targetNumWorkers * 0.8) {
+	if (gameState.countEntitiesByType(gameState.applyCiv("units/{civ}_support_female_citizen")) > this.targetNumWorkers * 0.8) {
 		this.dropsiteNumbers = {wood: 3, stone: 2, metal: 2};
 	}else{
 		this.dropsiteNumbers = {wood: 2, stone: 1, metal: 1};
@@ -438,10 +438,12 @@ EconomyManager.prototype.update = function(gameState, queues, events) {
 	this.assignToFoundations(gameState);
 	Engine.ProfileStop();
 	
-	/*gameState.getOwnEntitiesWithRole("worker").forEach(function(ent){
-		debug(ent.unitAIState());
-		debug(ent.unitAIOrderData());
-	});*/
+	Engine.ProfileStart("Run Workers");
+	gameState.getOwnEntitiesByRole("worker").forEach(function(ent){
+		var worker = new Worker(ent);
+		worker.update(gameState);
+	});
+	Engine.ProfileStop();
 
 	Engine.ProfileStop();
 };

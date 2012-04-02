@@ -19,6 +19,8 @@ var GameState = function(ai) {
 	this.store = this.ai._gameStateStore;
 	
 	this.cellSize = 4; // Size of each map tile
+	
+	this.turnCache = {};
 };
 
 GameState.prototype.updatingCollection = function(id, filter, collection){
@@ -185,37 +187,38 @@ GameState.prototype.getOwnEntitiesByMetadata = function(key, value){
 	return this.store[key + "-" + value];
 };
 
-GameState.prototype.getOwnEntitiesWithRole = function(role){
+GameState.prototype.getOwnEntitiesByRole = function(role){
 	return this.getOwnEntitiesByMetadata("role", role);
 };
 
-GameState.prototype.countEntitiesWithType = function(type) {
-	var count = 0;
-	this.getOwnEntities().forEach(function(ent) {
-		var t = ent.templateName();
-		if (t == type)
-			++count;
-	});
-	return count;
+GameState.prototype.getOwnTrainingFacilities = function(){
+	return this.updatingCollection("own-training-facilities", Filters.byTrainingQueue(), this.getOwnEntities());
 };
 
-GameState.prototype.countEntitiesAndQueuedWithType = function(type) {
-	var foundationType = "foundation|" + type;
-	var count = 0;
-	this.getOwnEntities().forEach(function(ent) {
+GameState.prototype.getOwnEntitiesByType = function(type){
+	var filter = Filters.byType(type);
+	return this.updatingCollection("own-by-type-" + type, filter, this.getOwnEntities());
+};
 
-		var t = ent.templateName();
-		if (t == type || t == foundationType)
-			++count;
+GameState.prototype.countEntitiesByType = function(type) {
+	return this.getOwnEntitiesByType(type).length;
+};
 
-		var queue = ent.trainingQueue();
-		if (queue) {
-			queue.forEach(function(item) {
-				if (item.template == type)
-					count += item.count;
-			});
-		}
+GameState.prototype.countEntitiesAndQueuedByType = function(type) {
+	var count = this.countEntitiesByType(type);
+	
+	// Count building foundations
+	count += this.countEntitiesByType("foundation|" + type);
+	
+	// Count entities in building production queues
+	this.getOwnTrainingFacilities().forEach(function(ent){
+		ent.trainingQueue().forEach(function(item) {
+			if (item.template == type){
+				count += item.count;
+			}
+		});
 	});
+	
 	return count;
 };
 
@@ -230,20 +233,19 @@ GameState.prototype.countFoundationsWithType = function(type) {
 	return count;
 };
 
-GameState.prototype.countEntitiesAndQueuedWithRole = function(role) {
-	var count = 0;
-	this.getOwnEntities().forEach(function(ent) {
+GameState.prototype.countOwnEntitiesByRole = function(role) {
+	return this.getOwnEntitiesByRole(role).length;
+};
 
-		if (ent.getMetadata("role") == role)
-			++count;
-
-		var queue = ent.trainingQueue();
-		if (queue) {
-			queue.forEach(function(item) {
-				if (item.metadata && item.metadata.role == role)
-					count += item.count;
-			});
-		}
+GameState.prototype.countOwnEntitiesAndQueuedWithRole = function(role) {
+	var count = this.countOwnEntitiesByRole(role);
+	
+	// Count entities in building production queues
+	this.getOwnTrainingFacilities().forEach(function(ent) {
+		ent.trainingQueue().forEach(function(item) {
+			if (item.metadata && item.metadata.role == role)
+				count += item.count;
+		});
 	});
 	return count;
 };
@@ -253,10 +255,9 @@ GameState.prototype.countEntitiesAndQueuedWithRole = function(role) {
  * already too busy.
  */
 GameState.prototype.findTrainers = function(template) {
-	var maxQueueLength = 2; // avoid tying up resources in giant training
-	// queues
-
-	return this.getOwnEntities().filter(function(ent) {
+	var maxQueueLength = 2; // avoid tying up resources in giant training queues
+	
+	return this.getOwnTrainingFacilities().filter(function(ent) {
 
 		var trainable = ent.trainableEntities();
 		if (!trainable || trainable.indexOf(template) == -1)
@@ -297,36 +298,6 @@ GameState.prototype.getOwnDropsites = function(resource){
 GameState.prototype.getResourceSupplies = function(resource){
 	return this.updatingCollection("resource-" + resource, Filters.byResource(resource), this.getEntities());
 };
-
-GameState.prototype.findResourceSupplies = function() {
-	var supplies = {};
-	this.entities.forEach(function(ent) {
-		var type = ent.resourceSupplyType();
-		if (!type)
-			return;
-		var amount = ent.resourceSupplyAmount();
-		if (!amount)
-			return;
-
-		var reportedType;
-		if (type.generic == "treasure")
-			reportedType = type.specific;
-		else
-			reportedType = type.generic;
-
-		if (!supplies[reportedType])
-			supplies[reportedType] = [];
-
-		supplies[reportedType].push({
-			"entity" : ent,
-			"amount" : amount,
-			"type" : type,
-			"position" : ent.position()
-		});
-	});
-	return supplies;
-};
-
 
 GameState.prototype.getBuildLimits = function() {
 	return this.playerData.buildLimits;

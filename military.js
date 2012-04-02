@@ -29,23 +29,6 @@ MilitaryAttackManager.prototype.init = function(gameState) {
 	var civ = gameState.playerData.civ;
 	
 	// load units and buildings from the config files
-	if (civ in Config.units.citizenSoldier){
-		this.uCitizenSoldier = Config.units.citizenSoldier[civ];
-	}else{
-		this.uCitizenSoldier = Config.units.citizenSoldier['default'];
-	}
-	
-	if (civ in Config.units.advanced){
-		this.uAdvanced = Config.units.advanced[civ];
-	}else{
-		this.uAdvanced = Config.units.advanced['default'];
-	}
-	
-	if (civ in Config.units.siege){
-		this.uSiege = Config.units.siege[civ];
-	}else{
-		this.uSiege = Config.units.siege['default'];
-	}
 	
 	if (civ in Config.buildings.moderate){
 		this.bModerate = Config.buildings.moderate[civ];
@@ -65,15 +48,6 @@ MilitaryAttackManager.prototype.init = function(gameState) {
 		this.bFort = Config.buildings.fort['default'];
 	}
 
-	for (var i in this.uCitizenSoldier){
-		this.uCitizenSoldier[i] = gameState.applyCiv(this.uCitizenSoldier[i]);
-	}
-	for (var i in this.uAdvanced){
-		this.uAdvanced[i] = gameState.applyCiv(this.uAdvanced[i]);
-	}
-	for (var i in this.uSiege){
-		this.uSiege[i] = gameState.applyCiv(this.uSiege[i]);
-	}
 	for (var i in this.bAdvanced){
 		this.bAdvanced[i] = gameState.applyCiv(this.bAdvanced[i]);
 	}
@@ -92,34 +66,54 @@ MilitaryAttackManager.prototype.init = function(gameState) {
 	var enemies = gameState.getEnemyEntities();
 	var filter = Filters.byClassesOr(["CitizenSoldier", "Super", "Siege"]);
 	this.enemySoldiers = enemies.filter(filter); // TODO: cope with diplomacy changes
+	this.enemySoldiers.registerUpdates();
 };
 
 /**
  * @param (GameState) gameState
+ * @param (string) soldierTypes
  * @returns array of soldiers for which training buildings exist
  */
-MilitaryAttackManager.prototype.findTrainableUnits = function(gameState, soldierTypes){
-	var ret = [];
+MilitaryAttackManager.prototype.findTrainableUnits = function(gameState, soldierType){
+	var allTrainable = [];
 	gameState.getOwnEntities().forEach(function(ent) {
 		var trainable = ent.trainableEntities();
 		for (var i in trainable){
-			if (soldierTypes.indexOf(trainable[i]) !== -1){
-				if (ret.indexOf(trainable[i]) === -1){
-					ret.push(trainable[i]);
-				}
-			} 
+			if (allTrainable.indexOf(trainable[i]) === -1){
+				allTrainable.push(trainable[i]);
+			}
 		}
-		return true;
 	});
+	
+	var ret = [];
+	for (var i in allTrainable){
+		var template = gameState.getTemplate(allTrainable[i]);
+		if (soldierType == this.getSoldierType(template)){
+			ret.push(allTrainable[i]);
+		}
+	}
 	return ret;
+};
+
+// Returns the type of a soldier, either citizenSoldier, advanced or siege 
+MilitaryAttackManager.prototype.getSoldierType = function(ent){
+	if (ent.hasClass("CitizenSoldier") && !ent.hasClass("Cavalry")){
+		return "citizenSoldier";
+	}else if (ent.hasClass("Super") || ent.hasClass("Hero") || ent.hasClass("CitizenSoldier")){
+		return "advanced";
+	}else if (ent.hasClass("Siege")){
+		return "siege";
+	}else{
+		return undefined;
+	}
 };
 
 /**
  * Returns the unit type we should begin training. (Currently this is whatever
  * we have least of.)
  */
-MilitaryAttackManager.prototype.findBestNewUnit = function(gameState, queue, soldierTypes) {
-	var units = this.findTrainableUnits(gameState, soldierTypes);
+MilitaryAttackManager.prototype.findBestNewUnit = function(gameState, queue, soldierType) {
+	var units = this.findTrainableUnits(gameState, soldierType);
 	// Count each type
 	var types = [];
 	for ( var tKey in units) {
@@ -500,7 +494,7 @@ MilitaryAttackManager.prototype.update = function(gameState, queues, events) {
 	
 	// Continually try training new units, in batches of 5
 	if (queues.citizenSoldier.length() < 6) {
-		var newUnit = this.findBestNewUnit(gameState, queues.citizenSoldier, this.uCitizenSoldier);
+		var newUnit = this.findBestNewUnit(gameState, queues.citizenSoldier, "citizenSoldier");
 		if (newUnit){
 			queues.citizenSoldier.addItem(new UnitTrainingPlan(gameState, newUnit, {
 				"role" : "soldier"
@@ -508,7 +502,7 @@ MilitaryAttackManager.prototype.update = function(gameState, queues, events) {
 		}
 	}
 	if (queues.advancedSoldier.length() < 2) {
-		var newUnit = this.findBestNewUnit(gameState, queues.advancedSoldier, this.uAdvanced);
+		var newUnit = this.findBestNewUnit(gameState, queues.advancedSoldier, "advanced");
 		if (newUnit){
 			queues.advancedSoldier.addItem(new UnitTrainingPlan(gameState, newUnit, {
 				"role" : "soldier"
@@ -516,7 +510,7 @@ MilitaryAttackManager.prototype.update = function(gameState, queues, events) {
 		}
 	}
 	if (queues.siege.length() < 4) {
-		var newUnit = this.findBestNewUnit(gameState, queues.siege, this.uSiege);
+		var newUnit = this.findBestNewUnit(gameState, queues.siege, "siege");
 		if (newUnit){
 			queues.siege.addItem(new UnitTrainingPlan(gameState, newUnit, {
 				"role" : "soldier"

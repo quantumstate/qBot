@@ -225,6 +225,7 @@ EconomyManager.prototype.updateResourceMaps = function(gameState, events){
 				self.resourceMaps[resource].addInfluence(x, z, radius[resource], strength);
 			});
 		}
+		// TODO: fix for treasure and move out of loop
 		// Look for destroy events and subtract the entities original influence from the resourceMap
 		for (var i in events) {
 			var e = events[i];
@@ -232,7 +233,6 @@ EconomyManager.prototype.updateResourceMaps = function(gameState, events){
 			if (e.type === "Destroy") {
 				if (e.msg.entityObj){
 					var ent = e.msg.entityObj;
-					//debug(ent);
 					if (ent && ent.resourceSupplyType() && ent.resourceSupplyType().generic === resource){
 						var x = Math.round(ent.position()[0] / gameState.cellSize);
 						var z = Math.round(ent.position()[1] / gameState.cellSize);
@@ -244,7 +244,7 @@ EconomyManager.prototype.updateResourceMaps = function(gameState, events){
 		}
 	} 
 	
-	this.resourceMaps['wood'].dumpIm("tree_density.png");
+	//this.resourceMaps['wood'].dumpIm("tree_density.png");
 };
 
 // Returns the position of the best place to build a new dropsite for the specified resource

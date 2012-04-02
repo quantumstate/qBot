@@ -191,6 +191,7 @@ GameState.prototype.getOwnEntitiesByRole = function(role){
 	return this.getOwnEntitiesByMetadata("role", role);
 };
 
+// TODO: fix this so it picks up not in use training stuff
 GameState.prototype.getOwnTrainingFacilities = function(){
 	return this.updatingCollection("own-training-facilities", Filters.byTrainingQueue(), this.getOwnEntities());
 };
